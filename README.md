@@ -4,6 +4,8 @@ WARD is an identity management system for creating and managing digital aliases.
 
 > **Important**: Never share your encryption password with anyone. If you lose your password, you will not be able to decrypt your data.
 
+There is a live deployment of Ward available however it is closed access. Contact me hello@notalex.sh for more information.
+
 ## Features 
 
 * **Realistic Identity Generation**: Creates believable identities with Australian addresses and details.

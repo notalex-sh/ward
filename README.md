@@ -36,7 +36,7 @@ WARD is an identity management system for creating and managing digital aliases.
     ```
 4.  **Start the server:**
     ```bash
-    node server.js
+    npm run dev
     ```
 5.  Open your browser and navigate to `http://localhost:3000`. You will be prompted to enter the system password you set in the `.env` file.
 

@@ -3,7 +3,6 @@ const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs').promises;
-const multer = require('multer');
 const https = require('https');
 require('dotenv').config();
 
@@ -15,7 +14,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-const upload = multer({ dest: 'uploads/' });
 
 // --- DATA FOR GENERATION ---
 const firstNames = {
@@ -270,20 +268,6 @@ app.post('/api/decrypt', async (req, res) => {
   }
 });
 
-// file handling
-app.post('/api/save-file', upload.single('file'), async (req, res) => {
-  try {
-    const fileData = await fs.readFile(req.file.path);
-    await fs.unlink(req.file.path);
-    
-    res.json({ 
-      success: true,
-      data: fileData.toString('base64')
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'File save failed' });
-  }
-});
 
 // proxy for thispersondoesnotexist.com to handle CORS
 app.get('/api/generate-face', (req, res) => {

@@ -1,16 +1,56 @@
-let aliases = [];
-let currentAliasId = null;
+let entities = [];
+let currentEntityId = null;
 let passwordCallback = null;
-let pendingAliasData = null;
+let pendingEntityData = null;
+let pendingEntityType = null;
 let hasUnsavedChanges = false;
 let lastExportedState = null;
 let isAuthenticated = false;
+let editingField = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthentication();
-});
+// Data pools for generation
+const dataPool = {
+    firstNames: {
+        male: ['James', 'William', 'Oliver', 'Jack', 'Noah', 'Thomas', 'Lucas', 'Henry', 'Alexander', 'Ethan', 
+                'Mason', 'Michael', 'Daniel', 'Jacob', 'Logan', 'Jackson', 'Levi', 'Sebastian', 'Mateo', 'Owen',
+                'Liam', 'Lachlan', 'Cooper', 'Charlie', 'Max', 'Xavier', 'Leo', 'Isaac', 'Harry', 'Oscar'],
+        female: ['Charlotte', 'Amelia', 'Olivia', 'Isla', 'Mia', 'Ava', 'Grace', 'Chloe', 'Willow', 'Matilda', 
+                 'Ivy', 'Ella', 'Sophie', 'Isabella', 'Ruby', 'Sienna', 'Evie', 'Harper', 'Lily', 'Zoe']
+    },
+    lastNames: ['Smith', 'Jones', 'Williams', 'Brown', 'Wilson', 'Taylor', 'Johnson', 'White', 'Martin', 'Anderson'],
+    colors: ['Blue', 'Green', 'Red', 'Purple', 'Orange', 'Yellow', 'Black', 'White', 'Pink', 'Teal', 'Gray', 'Indigo'],
+    interests: [
+        'Photography', 'Gaming', 'Reading', 'Cooking', 'Travel', 'Music', 'Art', 'Sports', 'Technology', 
+        'Fashion', 'Fitness', 'Movies', 'Nature', 'Writing', 'Dancing', 'Collecting', 'Gardening', 
+        'DIY Projects', 'Meditation', 'Volunteering', 'Board Games', 'Podcasts', 'Astronomy', 'History'
+    ],
+    linguisticFeatures: [
+        'Uses lots of emojis 😊', 'Formal writing style', 'Casual and friendly', 'Uses slang frequently',
+        'Grammatically perfect', 'Makes occasional typos', 'Uses ALL CAPS for emphasis', 'Minimalist responses',
+        'Writes long paragraphs', 'Short, punchy sentences', 'Uses British spelling', 'Uses American spelling',
+        'Lots of exclamation marks!', 'Never uses punctuation', 'Academic vocabulary', 'Simple language',
+        'Uses metaphors often', 'Very literal communication', 'Asks lots of questions', 'Makes pop culture references'
+    ],
+    contentThemes: [
+        'Memes', 'Tech News', 'Gaming', 'Fashion', 'Food & Recipes', 'Travel Photos', 'Fitness Tips',
+        'Movie Reviews', 'Music Discovery', 'Art Gallery', 'Nature Photography', 'Science Facts',
+        'History Trivia', 'DIY Tutorials', 'Life Hacks', 'Motivational Quotes', 'Comedy Sketches',
+        'Book Reviews', 'Pet Content', 'Sports Highlights', 'Cryptocurrency', 'Sustainable Living'
+    ],
+    postingStyles: [
+        'Daily multiple posts', 'Weekly curated content', 'Sporadic but high quality', 'Scheduled posts only',
+        'Real-time engagement', 'Story-focused', 'Video-heavy', 'Text-only posts', 'Infographic specialist',
+        'Repost with commentary', 'Original content only', 'Mix of OC and shares', 'Thread storyteller'
+    ],
+    targetAudiences: [
+        'Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Tech enthusiasts', 'Creative professionals',
+        'Students', 'Parents', 'Entrepreneurs', 'Gamers', 'Fitness enthusiasts', 'Foodies',
+        'Travel lovers', 'Pet owners', 'Music fans', 'Movie buffs', 'Book readers', 'Everyone'
+    ]
+};
 
-// authentication
+
+// Authentication
 function checkAuthentication() {
     if (!isAuthenticated) {
         document.getElementById('password-gate-modal').classList.remove('hidden');
@@ -47,20 +87,13 @@ async function verifySystemPassword() {
 }
 
 function initializeApp() {
-    lastExportedState = JSON.stringify(aliases);
+    lastExportedState = JSON.stringify(entities);
 }
 
-function showHelpModal() {
-    document.getElementById('help-modal').classList.remove('hidden');
-}
-
-function closeHelpModal() {
-    document.getElementById('help-modal').classList.add('hidden');
-}
-
+// Change tracking
 function markAsChanged() {
     hasUnsavedChanges = true;
-    const currentState = JSON.stringify(aliases);
+    const currentState = JSON.stringify(entities);
     if (currentState !== lastExportedState) {
         document.getElementById('unsaved-warning').classList.remove('hidden');
     } else {
@@ -70,11 +103,11 @@ function markAsChanged() {
 
 function markAsSaved() {
     hasUnsavedChanges = false;
-    lastExportedState = JSON.stringify(aliases);
+    lastExportedState = JSON.stringify(entities);
     document.getElementById('unsaved-warning').classList.add('hidden');
 }
 
-// notifications
+// Notifications
 function showNotification(message, type = 'info') {
     const container = document.getElementById('notification-container');
     const notification = document.createElement('div');
@@ -85,7 +118,7 @@ function showNotification(message, type = 'info') {
         info: 'border-white bg-white/10'
     };
     
-    notification.className = `${colors[type]} border px-4 py-3 rounded flex items-center space-x-2 transition-all transform translate-x-full backdrop-blur-sm`;
+    notification.className = `${colors[type]} border px-4 py-3 rounded flex items-center space-x-2 transition-all transform translate-x-full backdrop-blur-sm fade-in`;
     notification.innerHTML = `
         <span class="text-sm uppercase tracking-wider">${message}</span>
         <button onclick="this.parentElement.remove()" class="ml-4 hover:text-white/50">
@@ -107,7 +140,7 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-// alias management etc
+// Entity Management
 function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
@@ -116,64 +149,195 @@ function generateUUID() {
     });
 }
 
-async function showNewAliasModal() {
-    const aliasData = await fetchAliasData();
-    pendingAliasData = aliasData;
-    
-    document.getElementById('new-alias-modal').classList.remove('hidden');
-    updatePreview(aliasData);
+function showNewEntityModal() {
+    document.getElementById('new-entity-modal').classList.remove('hidden');
+    document.getElementById('preview-content').classList.add('hidden');
+    document.getElementById('regenerate-btn').classList.add('hidden');
+    document.getElementById('create-btn').classList.add('hidden');
 }
 
-async function regeneratePreview() {
-    const aliasData = await fetchAliasData();
-    pendingAliasData = aliasData;
-    updatePreview(aliasData);
+function selectEntityType(type) {
+    pendingEntityType = type;
+    
+    document.querySelectorAll('.entity-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    generateEntityData(type);
 }
 
-function updatePreview(data) {
-    const previewContent = document.getElementById('preview-content');
-
-    const usernames = generateUsernames(data.firstName, data.lastName, data.birthday);
+async function generateEntityData(type) {
+    showLoadingState('preview-content', 'Generating...');
     
-    previewContent.innerHTML = `
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="text-xs text-white/50 uppercase tracking-wider">Name</label>
-                <p class="text-lg font-semibold">${data.fullName}</p>
-            </div>
-            <div>
-                <label class="text-xs text-white/50 uppercase tracking-wider">Gender</label>
-                <p class="text-lg">${data.gender}</p>
-            </div>
-            <div>
-                <label class="text-xs text-white/50 uppercase tracking-wider">Birthday</label>
-                <p class="text-lg">${data.birthday}</p>
-            </div>
-            <div>
-                <label class="text-xs text-white/50 uppercase tracking-wider">Age</label>
-                <p class="text-lg">${calculateAge(data.birthday)} years</p>
-            </div>
-        </div>
+    if (type === 'person') {
+        const data = await generatePersonData();
+        pendingEntityData = data;
+    } else {
+        const data = generateContentPageData();
+        pendingEntityData = data;
+    }
+    
+    updatePreview(pendingEntityData, type);
+    document.getElementById('preview-content').classList.remove('hidden');
+    document.getElementById('regenerate-btn').classList.remove('hidden');
+    document.getElementById('create-btn').classList.remove('hidden');
+}
+
+async function generatePersonData() {
+    // Try API first, fallback to local
+    try {
+        const response = await fetch('/api/generate-alias');
+        const apiData = await response.json();
         
-        <div class="mt-4">
-            <label class="text-xs text-white/50 uppercase tracking-wider">Address</label>
-            <p class="text-sm mt-1">${data.address.street}</p>
-            <p class="text-sm">${data.address.suburb}, ${data.address.state} ${data.address.postcode}</p>
-            <p class="text-sm">${data.address.country}</p>
-        </div>
-        
-        <div class="mt-4">
-            <label class="text-xs text-white/50 uppercase tracking-wider mb-2 block">Select Username</label>
-            <div class="space-y-2">
-                ${usernames.map((username, index) => `
-                    <label class="flex items-center p-2 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-pointer transition-colors">
-                        <input type="radio" name="username-option" value="${username}" ${index === 0 ? 'checked' : ''} class="mr-3">
-                        <span class="font-mono">${username}</span>
-                    </label>
-                `).join('')}
-            </div>
-        </div>
-    `;
+        // Enhance with additional fields
+        return {
+            ...apiData,
+            age: calculateAge(apiData.birthday),
+            favoriteColor: dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)],
+            interests: getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3)),
+            linguisticFeatures: getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2)),
+            occupation: generateOccupation(),
+            education: generateEducation()
+        };
+    } catch (error) {
+        return generateLocalPersonData();
+    }
+}
+
+function generateLocalPersonData() {
+    const gender = Math.random() > 0.5 ? 'male' : 'female';
+    const firstName = dataPool.firstNames[gender][Math.floor(Math.random() * dataPool.firstNames[gender].length)];
+    const lastName = dataPool.lastNames[Math.floor(Math.random() * dataPool.lastNames.length)];
+    
+    const birthYear = new Date().getFullYear() - Math.floor(Math.random() * 47 + 18);
+    const birthMonth = Math.floor(Math.random() * 12 + 1);
+    const birthDay = Math.floor(Math.random() * 28 + 1);
+    const birthday = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
+    
+    return {
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        gender,
+        birthday,
+        age: calculateAge(birthday),
+        favoriteColor: dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)],
+        interests: getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3)),
+        linguisticFeatures: getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2)),
+        occupation: generateOccupation(),
+        education: generateEducation(),
+        address: {
+            street: '123 Example Street',
+            suburb: 'Perth',
+            state: 'WA',
+            postcode: '6000',
+            country: 'Australia',
+            full: '123 Example Street, Perth, WA 6000, Australia'
+        }
+    };
+}
+
+function generateContentPageData() {
+    const themes = getRandomItems(dataPool.contentThemes, 1)[0];
+    const pageName = generatePageName(themes);
+    const handle = generateHandle(pageName);
+    
+    return {
+        pageName,
+        handle,
+        theme: themes,
+        description: generatePageDescription(themes),
+        postingStyle: getRandomItems(dataPool.postingStyles, 1)[0],
+        targetAudience: getRandomItems(dataPool.targetAudiences, 1 + Math.floor(Math.random() * 2)),
+        postingFrequency: generatePostingFrequency(),
+        contentPillars: generateContentPillars(themes),
+        voiceTone: generateVoiceTone(),
+        hashtags: generateHashtags(themes),
+        bestPostingTimes: generatePostingTimes()
+    };
+}
+
+function generatePageName(theme) {
+    const prefixes = ['The', 'Daily', 'Epic', 'Ultimate', 'Best', 'Top', 'Viral', 'Amazing', 'Awesome'];
+    const suffixes = ['Hub', 'Zone', 'Central', 'World', 'Daily', 'Life', 'Vibes', 'Nation', 'Squad'];
+    
+    if (Math.random() > 0.5) {
+        return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${theme}`;
+    } else {
+        return `${theme} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+    }
+}
+
+function generateHandle(pageName) {
+    const base = pageName.toLowerCase().replace(/\s+/g, '');
+    const suffix = Math.floor(Math.random() * 999);
+    return `@${base}${suffix}`;
+}
+
+function generatePageDescription(theme) {
+    const templates = [
+        `Your daily dose of ${theme.toLowerCase()} content 🔥`,
+        `Bringing you the best ${theme.toLowerCase()} from around the web`,
+        `${theme} enthusiast | Curator of awesome content`,
+        `All about ${theme.toLowerCase()} | Follow for daily updates`,
+        `${theme} content that makes your day better ✨`
+    ];
+    return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function generatePostingFrequency() {
+    const frequencies = ['3-5 posts/day', '1-2 posts/day', '5-7 posts/week', '3-4 posts/week', 'Daily posts'];
+    return frequencies[Math.floor(Math.random() * frequencies.length)];
+}
+
+function generateContentPillars(theme) {
+    const pillars = {
+        'Memes': ['Trending formats', 'Original content', 'Relatable humor', 'Pop culture'],
+        'Tech News': ['Product launches', 'Industry analysis', 'Reviews', 'Future tech'],
+        'Gaming': ['Game reviews', 'Tips & tricks', 'News', 'Streaming highlights'],
+        'Fashion': ['Outfit ideas', 'Trend alerts', 'Style tips', 'Designer news'],
+        'Food & Recipes': ['Quick recipes', 'Restaurant reviews', 'Cooking tips', 'Food trends']
+    };
+    
+    return pillars[theme] || ['Educational content', 'Entertainment', 'Community engagement', 'Trending topics'];
+}
+
+function generateVoiceTone() {
+    const tones = ['Friendly & approachable', 'Professional & informative', 'Humorous & witty', 
+                   'Inspirational & motivating', 'Casual & conversational', 'Edgy & bold'];
+    return tones[Math.floor(Math.random() * tones.length)];
+}
+
+function generateHashtags(theme) {
+    const baseTag = `#${theme.replace(/\s+/g, '').toLowerCase()}`;
+    const additionalTags = ['#viral', '#trending', '#daily', '#instagood', '#follow', '#like'];
+    const tags = [baseTag, ...getRandomItems(additionalTags, 3)];
+    return tags;
+}
+
+function generatePostingTimes() {
+    const times = ['9:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', '8:00 PM'];
+    return getRandomItems(times, 2 + Math.floor(Math.random() * 2));
+}
+
+function generateOccupation() {
+    const occupations = ['Software Developer', 'Marketing Manager', 'Teacher', 'Graphic Designer', 
+                        'Consultant', 'Freelancer', 'Student', 'Entrepreneur', 'Writer', 'Engineer'];
+    return occupations[Math.floor(Math.random() * occupations.length)];
+}
+
+function generateEducation() {
+    const degrees = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Business', 'PhD', 
+                    'High School Diploma', 'Associate Degree', 'Trade Certificate'];
+    const fields = ['Computer Science', 'Business', 'Psychology', 'Engineering', 'Medicine', 
+                   'Education', 'Marketing', 'Design', 'Communications'];
+    return `${degrees[Math.floor(Math.random() * degrees.length)]} in ${fields[Math.floor(Math.random() * fields.length)]}`;
+}
+
+function getRandomItems(array, count) {
+    const shuffled = [...array].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
 }
 
 function calculateAge(birthday) {
@@ -187,130 +351,277 @@ function calculateAge(birthday) {
     return age;
 }
 
-function closeNewAliasModal() {
-    document.getElementById('new-alias-modal').classList.add('hidden');
-    pendingAliasData = null;
-}
-
-async function confirmNewAlias() {
-    const selected = document.querySelector('input[name="username-option"]:checked');
-    if (!selected || !pendingAliasData) return;
-    
-    const alias = {
-        id: generateUUID(),
-        ...pendingAliasData,
-        username: selected.value,
-        profilePhoto: null,
-        profilePhotoLocked: false,
-        passwords: [],
-        totpSecrets: [],
-        notes: '',
-        createdAt: new Date().toISOString()
-    };
-    
-    aliases.push(alias);
-    renderTabs();
-    selectAlias(alias.id);
-    markAsChanged();
-    closeNewAliasModal();
-    showNotification('NEW IDENTITY CREATED', 'success');
-    
-    setTimeout(() => generateProfilePhoto(), 500);
-}
-
 function generateUsernames(firstName, lastName, birthday) {
     const usernames = [];
     const year = birthday.split('-')[0].slice(-2);
     const birthYear = birthday.split('-')[0];
     const birthMonth = birthday.split('-')[1];
-    const birthDay = birthday.split('-')[2];
     
-    const patterns = [
-        `${firstName.toLowerCase()}${lastName.toLowerCase()}${year}`,
-        `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
-        `${firstName.toLowerCase()}_${lastName.toLowerCase()}`,
-        `${firstName[0].toLowerCase()}${lastName.toLowerCase()}${birthYear}`,
-        `${firstName.toLowerCase()}${birthMonth}${birthDay}`,
-    ];
+    usernames.push(`${firstName.toLowerCase()}${lastName.toLowerCase()}${year}`);
+    usernames.push(`${firstName.toLowerCase()}.${lastName.toLowerCase()}`);
+    usernames.push(`${firstName.toLowerCase()}_${lastName.toLowerCase()}`);
+    usernames.push(`${firstName[0].toLowerCase()}${lastName.toLowerCase()}${birthYear}`);
+    usernames.push(`${firstName.toLowerCase()}${birthMonth}${year}`);
     
-    return patterns;
+    // Add custom option
+    usernames.push('custom');
+    
+    return usernames;
 }
 
-async function fetchAliasData() {
-    try {
-        const response = await fetch('/api/generate-alias');
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        return generateLocalAlias();
+// Preview Updates
+function updatePreview(data, type) {
+    const previewContent = document.getElementById('preview-content');
+    
+    if (type === 'person') {
+        const usernames = generateUsernames(data.firstName, data.lastName, data.birthday);
+        
+        previewContent.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Name</label>
+                    <p class="text-lg font-semibold">${data.fullName}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Age</label>
+                    <p class="text-lg">${data.age} years (${data.birthday})</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Gender</label>
+                    <p class="text-lg">${data.gender}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Favorite Color</label>
+                    <p class="text-lg">${data.favoriteColor}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Occupation</label>
+                    <p class="text-lg">${data.occupation}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Education</label>
+                    <p class="text-lg">${data.education}</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Address</label>
+                <p class="text-sm mt-1">${data.address.full}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Interests</label>
+                <p class="text-sm mt-1">${data.interests.join(', ')}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Linguistic Features</label>
+                <p class="text-sm mt-1">${data.linguisticFeatures.join('; ')}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider mb-2 block">Select Username</label>
+                <div class="space-y-2">
+                    ${usernames.map((username, index) => `
+                        <label class="flex items-center p-2 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-pointer transition-colors">
+                            <input type="radio" name="username-option" value="${username}" ${index === 0 ? 'checked' : ''} 
+                                   onchange="handleUsernameSelection('${username}')" class="mr-3">
+                            <span class="font-mono">${username === 'custom' ? 'Enter custom username...' : username}</span>
+                        </label>
+                    `).join('')}
+                    <input type="text" id="custom-username-input" class="mono-input w-full px-4 py-2 rounded text-white hidden" 
+                           placeholder="Enter custom username" onkeyup="updateCustomUsername(this.value)">
+                </div>
+            </div>
+        `;
+    } else {
+        previewContent.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Page Name</label>
+                    <p class="text-lg font-semibold">${data.pageName}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Handle</label>
+                    <p class="text-lg font-mono">${data.handle}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Theme</label>
+                    <p class="text-lg">${data.theme}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Posting Style</label>
+                    <p class="text-lg">${data.postingStyle}</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Description</label>
+                <p class="text-sm mt-1">${data.description}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Target Audience</label>
+                <p class="text-sm mt-1">${data.targetAudience.join(', ')}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Content Pillars</label>
+                <p class="text-sm mt-1">${data.contentPillars.join(' | ')}</p>
+            </div>
+            
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Voice Tone</label>
+                    <p class="text-sm mt-1">${data.voiceTone}</p>
+                </div>
+                <div>
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Posting Frequency</label>
+                    <p class="text-sm mt-1">${data.postingFrequency}</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Best Posting Times</label>
+                <p class="text-sm mt-1">${data.bestPostingTimes.join(', ')}</p>
+            </div>
+            
+            <div class="mt-4">
+                <label class="text-xs text-white/50 uppercase tracking-wider">Hashtags</label>
+                <p class="text-sm mt-1">${data.hashtags.join(' ')}</p>
+            </div>
+        `;
     }
 }
 
-function generateLocalAlias() {
-    const firstNames = {
-        male: ['James', 'William', 'Oliver', 'Jack', 'Noah'],
-        female: ['Charlotte', 'Amelia', 'Olivia', 'Isla', 'Mia']
-    };
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'];
-    const suburbs = ['Perth', 'Fremantle', 'Joondalup', 'Rockingham', 'Mandurah'];
-    
-    const gender = Math.random() > 0.5 ? 'male' : 'female';
-    const firstName = firstNames[gender][Math.floor(Math.random() * 5)];
-    const lastName = lastNames[Math.floor(Math.random() * 5)];
-    const birthYear = 1970 + Math.floor(Math.random() * 35);
-    const birthMonth = Math.floor(Math.random() * 12 + 1);
-    const birthDay = Math.floor(Math.random() * 28 + 1);
-    
-    return {
-        firstName,
-        lastName,
-        fullName: `${firstName} ${lastName}`,
-        gender,
-        birthday: `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`,
-        address: {
-            street: '123 Example Street',
-            suburb: suburbs[Math.floor(Math.random() * 5)],
-            state: 'WA',
-            postcode: '6000',
-            country: 'Australia',
-            full: '123 Example Street, Perth, WA 6000, Australia'
-        }
-    };
+let customUsername = '';
+
+function handleUsernameSelection(value) {
+    const customInput = document.getElementById('custom-username-input');
+    if (value === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+    } else {
+        customInput.classList.add('hidden');
+        customUsername = '';
+    }
 }
 
-function selectAlias(id) {
-    currentAliasId = id;
+function updateCustomUsername(value) {
+    customUsername = value;
+}
+
+async function regeneratePreview() {
+    await generateEntityData(pendingEntityType);
+}
+
+function closeNewEntityModal() {
+    document.getElementById('new-entity-modal').classList.add('hidden');
+    pendingEntityData = null;
+    pendingEntityType = null;
+    customUsername = '';
+}
+
+async function confirmNewEntity() {
+    if (!pendingEntityData || !pendingEntityType) return;
+    
+    let entity;
+    
+    if (pendingEntityType === 'person') {
+        const selected = document.querySelector('input[name="username-option"]:checked');
+        if (!selected) return;
+        
+        let username = selected.value;
+        if (username === 'custom') {
+            username = customUsername;
+            if (!username) {
+                showNotification('Enter custom username', 'error');
+                return;
+            }
+        }
+        
+        entity = {
+            id: generateUUID(),
+            type: 'person',
+            ...pendingEntityData,
+            username,
+            profilePhoto: null,
+            profilePhotoLocked: false,
+            passwords: [],
+            totpSecrets: [],
+            notes: '',
+            createdAt: new Date().toISOString()
+        };
+    } else {
+        entity = {
+            id: generateUUID(),
+            type: 'content',
+            ...pendingEntityData,
+            profilePhoto: null,
+            profilePhotoLocked: false,
+            passwords: [],
+            totpSecrets: [],
+            notes: '',
+            createdAt: new Date().toISOString()
+        };
+    }
+    
+    entities.push(entity);
+    renderTabs();
+    selectEntity(entity.id);
+    markAsChanged();
+    closeNewEntityModal();
+    showNotification(`NEW ${pendingEntityType.toUpperCase()} CREATED`, 'success');
+    
+    if (pendingEntityType === 'person') {
+        setTimeout(() => generateProfilePhoto(), 500);
+    }
+}
+
+function selectEntity(id) {
+    currentEntityId = id;
     renderTabs();
     renderContent();
 }
 
-function deleteAlias(id) {
-    if (!confirm('Delete this alias permanently?')) return;
+function deleteEntity(id) {
+    if (!confirm('Delete this entity permanently?')) return;
     
-    aliases = aliases.filter(a => a.id !== id);
-    if (currentAliasId === id) {
-        selectAlias(aliases[0].id);
+    entities = entities.filter(e => e.id !== id);
+    if (currentEntityId === id) {
+        if (entities.length > 0) {
+            selectEntity(entities[0].id);
+        } else {
+            currentEntityId = null;
+            renderTabs();
+            renderContent();
+        }
+    } else {
+        renderTabs();
     }
-    renderTabs();
     markAsChanged();
-    showNotification('ALIAS DELETED', 'success');
+    showNotification('ENTITY DELETED', 'success');
 }
 
-// 5ab rendering
+// Tab Rendering
 function renderTabs() {
     const container = document.getElementById('tabs-container');
     container.innerHTML = '';
     
-    aliases.forEach(alias => {
+    entities.forEach(entity => {
         const tab = document.createElement('div');
+        const displayName = entity.type === 'person' ? entity.fullName : entity.pageName;
+        const icon = entity.type === 'person' ? '👤' : '📄';
+        
         tab.className = `flex items-center px-4 py-2 hover:bg-white/10 transition-colors cursor-pointer ${
-            alias.id === currentAliasId ? 'tab-active' : ''
+            entity.id === currentEntityId ? 'tab-active' : ''
         }`;
-        tab.onclick = () => selectAlias(alias.id);
+        tab.onclick = () => selectEntity(entity.id);
         
         tab.innerHTML = `
-            <span class="mr-2 font-mono">${alias.fullName}</span>
-            <button onclick="event.stopPropagation(); deleteAlias('${alias.id}')" class="ml-2 text-white/50 hover:text-red-500">
+            <span class="mr-2">${icon}</span>
+            <span class="mr-2 font-mono text-sm">${displayName}</span>
+            <button onclick="event.stopPropagation(); deleteEntity('${entity.id}')" class="ml-2 text-white/50 hover:text-red-500">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -321,34 +632,57 @@ function renderTabs() {
     });
 }
 
-// content rendering
+// Content Rendering
 function renderContent() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    const container = document.getElementById('content-container');
     
+    if (!entity) {
+        container.innerHTML = `
+            <div class="max-w-4xl mx-auto mt-10" id="welcome-message">
+                <div class="cyber-border rounded-lg text-center p-8 sm:p-12 fade-in">
+                    <h2 class="text-4xl sm:text-6xl font-bold tracking-widest">WARD</h2>
+                    <p class="text-base sm:text-lg text-white/70 mt-2 uppercase tracking-wider">Identity Management System</p>
+                    <button onclick="showNewEntityModal()" class="mono-button px-6 py-3 rounded mt-8">CREATE NEW ENTITY</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (entity.type === 'person') {
+        renderPersonContent(entity);
+    } else {
+        renderContentPageContent(entity);
+    }
+    
+    startTOTPTimers();
+}
+
+function renderPersonContent(entity) {
     const container = document.getElementById('content-container');
     container.innerHTML = `
         <div class="max-w-6xl mx-auto">
             <!-- Profile Section -->
-            <div class="cyber-border rounded-lg p-6 mb-6">
-                <h2 class="text-2xl font-bold mb-6 uppercase tracking-wider">IDENTITY PROFILE</h2>
+            <div class="cyber-border rounded-lg p-4 sm:p-6 mb-6 fade-in">
+                <h2 class="text-xl sm:text-2xl font-bold mb-6 uppercase tracking-wider">PERSONAL IDENTITY</h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Photo Section -->
                     <div class="flex flex-col items-center">
                         <div id="photo-container" class="profile-frame mb-4 relative w-[256px] h-[256px]">
-                            ${alias.profilePhoto ? 
-                                `<img src="${alias.profilePhoto}" class="w-full h-full object-cover">` :
+                            ${entity.profilePhoto ? 
+                                `<img src="${entity.profilePhoto}" class="w-full h-full object-cover">` :
                                 `<div class="w-full h-full bg-black flex items-center justify-center">
-                                    <div class="loading-spinner"></div>
+                                    <div class="loading-dots"><div></div><div></div><div></div></div>
                                 </div>`
                             }
                         </div>
                         <div class="space-y-2 w-full max-w-[256px]">
-                            ${!alias.profilePhotoLocked ? `
+                            ${!entity.profilePhotoLocked ? `
                                 <button onclick="generateProfilePhoto()" class="mono-button px-4 py-2 rounded text-sm w-full">GENERATE</button>
-                                ${alias.profilePhoto ? `
-                                    <button onclick="lockProfilePhoto()" class="mono-button-secondary px-4 py-2 rounded text-sm w-full">LOCK & SAVE</button>
+                                ${entity.profilePhoto ? `
+                                    <button onclick="lockProfilePhoto()" class="mono-button-secondary px-4 py-2 rounded text-sm w-full">LOCK</button>
                                 ` : ''}
                             ` : `
                                 <button onclick="downloadPhoto()" class="mono-button px-4 py-2 rounded text-sm w-full">DOWNLOAD</button>
@@ -364,132 +698,452 @@ function renderContent() {
                     
                     <!-- Basic Info -->
                     <div class="space-y-3">
-                        <div>
+                        <div class="editable-field">
                             <label class="text-xs text-white/50 uppercase tracking-wider">Full Name</label>
-                            <p class="text-lg font-semibold">${alias.fullName}</p>
+                            <div class="flex items-center justify-between">
+                                <p class="text-base sm:text-lg font-semibold">${entity.fullName}</p>
+                                <button onclick="editField('fullName', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <div>
+                        
+                        <div class="editable-field">
                             <label class="text-xs text-white/50 uppercase tracking-wider">Username</label>
-                            <p class="text-lg font-mono">${alias.username || 'NOT SET'}</p>
+                            <div class="flex items-center justify-between">
+                                <p class="text-base sm:text-lg font-mono">${entity.username}</p>
+                                <button onclick="editField('username', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-xs text-white/50 uppercase tracking-wider">Gender</label>
-                            <p class="text-lg">${alias.gender}</p>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-white/50 uppercase tracking-wider">Gender</label>
+                                <p class="text-base sm:text-lg">${entity.gender}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-white/50 uppercase tracking-wider">Age</label>
+                                <p class="text-base sm:text-lg">${entity.age} years</p>
+                            </div>
                         </div>
+                        
                         <div>
                             <label class="text-xs text-white/50 uppercase tracking-wider">Birthday</label>
-                            <p class="text-lg">${alias.birthday}</p>
+                            <p class="text-base sm:text-lg">${entity.birthday}</p>
+                        </div>
+                        
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Favorite Color</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-base sm:text-lg">${entity.favoriteColor}</p>
+                                <button onclick="editField('favoriteColor', 'select', ${JSON.stringify(dataPool.colors).replace(/"/g, '&quot;')})" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Address -->
-                    <div>
-                        <label class="text-xs text-white/50 uppercase tracking-wider">Address</label>
-                        <p class="text-sm mt-2">${alias.address.street}</p>
-                        <p class="text-sm">${alias.address.suburb}, ${alias.address.state} ${alias.address.postcode}</p>
-                        <p class="text-sm">${alias.address.country}</p>
+                    <!-- Additional Info -->
+                    <div class="space-y-3">
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Occupation</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm">${entity.occupation}</p>
+                                <button onclick="editField('occupation', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Education</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm">${entity.education}</p>
+                                <button onclick="editField('education', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Address</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm">${entity.address.full}</p>
+                                <button onclick="editField('address', 'address')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interests and Linguistic Features -->
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="editable-field">
+                        <label class="text-xs text-white/50 uppercase tracking-wider">Interests</label>
+                        <div class="flex items-start justify-between">
+                            <p class="text-sm mt-1">${entity.interests.join(', ')}</p>
+                            <button onclick="editField('interests', 'multiselect', ${JSON.stringify(dataPool.interests).replace(/"/g, '&quot;')})" class="text-white/50 hover:text-white ml-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="editable-field">
+                        <label class="text-xs text-white/50 uppercase tracking-wider">Linguistic Features</label>
+                        <div class="flex items-start justify-between">
+                            <p class="text-sm mt-1">${entity.linguisticFeatures.join('; ')}</p>
+                            <button onclick="editField('linguisticFeatures', 'multiselect', ${JSON.stringify(dataPool.linguisticFeatures).replace(/"/g, '&quot;')})" class="text-white/50 hover:text-white ml-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Password Manager Section -->
-            <div class="cyber-border rounded-lg p-6 mb-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold uppercase tracking-wider">PASSWORDS</h2>
-                    <button onclick="showAddPasswordModal()" class="mono-button px-4 py-2 rounded text-sm">ADD PASSWORD</button>
+            ${renderPasswordSection(entity)}
+            ${renderTOTPSection(entity)}
+            ${renderNotesSection(entity)}
+        </div>
+    `;
+}
+
+function renderContentPageContent(entity) {
+    const container = document.getElementById('content-container');
+    container.innerHTML = `
+        <div class="max-w-6xl mx-auto">
+            <!-- Content Page Profile -->
+            <div class="cyber-border rounded-lg p-4 sm:p-6 mb-6 fade-in">
+                <h2 class="text-xl sm:text-2xl font-bold mb-6 uppercase tracking-wider">CONTENT PAGE</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Page Name</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-lg font-semibold">${entity.pageName}</p>
+                                <button onclick="editField('pageName', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Handle</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-lg font-mono">${entity.handle}</p>
+                                <button onclick="editField('handle', 'text')" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Theme</label>
+                            <div class="flex items-center justify-between">
+                                <p class="text-base">${entity.theme}</p>
+                                <button onclick="editField('theme', 'select', ${JSON.stringify(dataPool.contentThemes).replace(/"/g, '&quot;')})" class="text-white/50 hover:text-white">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Description</label>
+                            <div class="flex items-start justify-between">
+                                <p class="text-sm mt-1">${entity.description}</p>
+                                <button onclick="editField('description', 'textarea')" class="text-white/50 hover:text-white ml-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Posting Style</label>
+                            <p class="text-base">${entity.postingStyle}</p>
+                        </div>
+                        
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Voice Tone</label>
+                            <p class="text-base">${entity.voiceTone}</p>
+                        </div>
+                        
+                        <div class="editable-field mb-3">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Posting Frequency</label>
+                            <p class="text-base">${entity.postingFrequency}</p>
+                        </div>
+                        
+                        <div class="editable-field">
+                            <label class="text-xs text-white/50 uppercase tracking-wider">Best Times</label>
+                            <p class="text-sm">${entity.bestPostingTimes.join(', ')}</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="passwords-list" class="space-y-3">
-                    ${renderPasswords(alias)}
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="editable-field">
+                        <label class="text-xs text-white/50 uppercase tracking-wider">Target Audience</label>
+                        <p class="text-sm mt-1">${entity.targetAudience.join(', ')}</p>
+                    </div>
+                    
+                    <div class="editable-field">
+                        <label class="text-xs text-white/50 uppercase tracking-wider">Content Pillars</label>
+                        <p class="text-sm mt-1">${entity.contentPillars.join(' | ')}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 editable-field">
+                    <label class="text-xs text-white/50 uppercase tracking-wider">Hashtags</label>
+                    <div class="flex items-start justify-between">
+                        <p class="text-sm mt-1 font-mono">${entity.hashtags.join(' ')}</p>
+                        <button onclick="editField('hashtags', 'tags')" class="text-white/50 hover:text-white ml-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <!-- TOTP Section -->
-            <div class="cyber-border rounded-lg p-6 mb-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold uppercase tracking-wider">2FA CODES</h2>
-                    <button onclick="showAddTOTPModal()" class="mono-button px-4 py-2 rounded text-sm">ADD TOTP</button>
-                </div>
-                
-                <div id="totp-list" class="space-y-3">
-                    ${renderTOTP(alias)}
-                </div>
+            ${renderPasswordSection(entity)}
+            ${renderTOTPSection(entity)}
+            ${renderNotesSection(entity)}
+        </div>
+    `;
+}
+
+function renderPasswordSection(entity) {
+    return `
+        <div class="cyber-border rounded-lg p-4 sm:p-6 mb-6 fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold uppercase tracking-wider">PASSWORDS</h2>
+                <button onclick="showAddPasswordModal()" class="mono-button px-4 py-2 rounded text-sm">ADD PASSWORD</button>
             </div>
             
-            <!-- Notes Section -->
-            <div class="cyber-border rounded-lg p-6">
-                <h2 class="text-2xl font-bold mb-6 uppercase tracking-wider">NOTES</h2>
-                <textarea 
-                    id="notes-textarea"
-                    class="mono-input w-full h-32 px-4 py-3 rounded text-white resize-none font-mono"
-                    placeholder="Add notes about this alias..."
-                    onchange="updateNotes(this.value)"
-                >${alias.notes || ''}</textarea>
+            <div id="passwords-list" class="space-y-3">
+                ${renderPasswords(entity)}
             </div>
         </div>
     `;
-    
-    startTOTPTimers();
 }
 
-function renderPasswords(alias) {
-    if (!alias.passwords || alias.passwords.length === 0) {
-        return '<p class="text-white/30 uppercase tracking-wider">No passwords saved</p>';
-    }
-    
-    return alias.passwords.map((pwd, index) => `
-        <div class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
-            <div class="flex-1">
-                <p class="font-semibold">${pwd.service}</p>
-                <p class="text-sm text-white/50 font-mono">${pwd.username}</p>
+function renderTOTPSection(entity) {
+    return `
+        <div class="cyber-border rounded-lg p-4 sm:p-6 mb-6 fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold uppercase tracking-wider">2FA CODES</h2>
+                <button onclick="showAddTOTPModal()" class="mono-button px-4 py-2 rounded text-sm">ADD TOTP</button>
             </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="copyPassword(${index})" class="mono-button-secondary px-3 py-1 rounded text-sm">COPY</button>
-                <button onclick="showPasswordValue(${index})" class="mono-button-secondary px-3 py-1 rounded text-sm">VIEW</button>
-                <button onclick="deletePassword(${index})" class="text-red-500 hover:text-red-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                </button>
+            
+            <div id="totp-list" class="space-y-3">
+                ${renderTOTP(entity)}
             </div>
         </div>
-    `).join('');
+    `;
 }
 
-function renderTOTP(alias) {
-    if (!alias.totpSecrets || alias.totpSecrets.length === 0) {
-        return '<p class="text-white/30 uppercase tracking-wider">No TOTP configured</p>';
-    }
+function renderNotesSection(entity) {
+    return `
+        <div class="cyber-border rounded-lg p-4 sm:p-6 fade-in">
+            <h2 class="text-xl sm:text-2xl font-bold mb-6 uppercase tracking-wider">NOTES</h2>
+            <textarea 
+                id="notes-textarea"
+                class="mono-input w-full h-32 px-4 py-3 rounded text-white resize-none font-mono"
+                placeholder="Add notes about this entity..."
+                onchange="updateNotes(this.value)"
+            >${entity.notes || ''}</textarea>
+        </div>
+    `;
+}
+
+// Edit Field Functions
+function editField(fieldName, fieldType, options = null) {
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
-    return alias.totpSecrets.map((totp, index) => `
-        <div class="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded">
-            <div class="flex-1">
-                <p class="font-semibold mb-2">${totp.service}</p>
-                <div class="flex items-center space-x-4">
-                    <span class="totp-display font-mono" id="totp-code-${index}">------</span>
-                    <div class="relative w-10 h-10">
-                        <svg class="progress-ring w-10 h-10">
-                            <circle cx="20" cy="20" r="18" stroke="rgba(255, 255, 255, 0.1)" stroke-width="2" fill="none"/>
-                            <circle id="totp-progress-${index}" cx="20" cy="20" r="18" stroke="#ffffff" stroke-width="2" fill="none"
-                                stroke-dasharray="113" stroke-dashoffset="113"/>
-                        </svg>
-                    </div>
-                    <button onclick="copyTOTPCode(${index})" class="mono-button-secondary px-3 py-1 rounded text-sm">COPY</button>
+    editingField = { name: fieldName, type: fieldType };
+    const modal = document.getElementById('edit-field-modal');
+    const title = document.getElementById('edit-field-title');
+    const content = document.getElementById('edit-field-content');
+    
+    title.textContent = `Edit ${fieldName.replace(/([A-Z])/g, ' $1').trim()}`;
+    
+    let currentValue = entity[fieldName];
+    let inputHTML = '';
+    
+    switch (fieldType) {
+        case 'text':
+            inputHTML = `<input type="text" id="edit-field-input" class="mono-input w-full px-4 py-2 rounded text-white" value="${currentValue || ''}">`;
+            break;
+            
+        case 'textarea':
+            inputHTML = `<textarea id="edit-field-input" class="mono-input w-full h-32 px-4 py-3 rounded text-white resize-none">${currentValue || ''}</textarea>`;
+            break;
+            
+        case 'select':
+            const selectOptions = JSON.parse(options.replace(/&quot;/g, '"'));
+            inputHTML = `
+                <select id="edit-field-input" class="mono-input w-full px-4 py-2 rounded text-white">
+                    ${selectOptions.map(opt => `<option value="${opt}" ${currentValue === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            `;
+            break;
+            
+        case 'multiselect':
+            const multiOptions = JSON.parse(options.replace(/&quot;/g, '"'));
+            const currentValues = Array.isArray(currentValue) ? currentValue : [];
+            inputHTML = `
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    ${multiOptions.map(opt => `
+                        <label class="flex items-center p-2 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-pointer">
+                            <input type="checkbox" value="${opt}" ${currentValues.includes(opt) ? 'checked' : ''} class="mr-3 multiselect-option">
+                            <span class="text-sm">${opt}</span>
+                        </label>
+                    `).join('')}
                 </div>
-            </div>
-            <button onclick="deleteTOTP(${index})" class="text-red-500 hover:text-red-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                </svg>
-            </button>
-        </div>
-    `).join('');
+            `;
+            break;
+            
+        case 'tags':
+            const tagsValue = Array.isArray(currentValue) ? currentValue.join(', ') : '';
+            inputHTML = `
+                <input type="text" id="edit-field-input" class="mono-input w-full px-4 py-2 rounded text-white" 
+                       value="${tagsValue}" placeholder="Enter tags separated by commas">
+                <p class="text-xs text-white/50 mt-2">Separate tags with commas</p>
+            `;
+            break;
+            
+        case 'address':
+            const addr = currentValue || {};
+            inputHTML = `
+                <div class="space-y-3">
+                    <input type="text" id="edit-street" class="mono-input w-full px-4 py-2 rounded text-white" 
+                           placeholder="Street" value="${addr.street || ''}">
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" id="edit-suburb" class="mono-input px-4 py-2 rounded text-white" 
+                               placeholder="Suburb" value="${addr.suburb || ''}">
+                        <input type="text" id="edit-postcode" class="mono-input px-4 py-2 rounded text-white" 
+                               placeholder="Postcode" value="${addr.postcode || ''}">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" id="edit-state" class="mono-input px-4 py-2 rounded text-white" 
+                               placeholder="State" value="${addr.state || ''}">
+                        <input type="text" id="edit-country" class="mono-input px-4 py-2 rounded text-white" 
+                               placeholder="Country" value="${addr.country || ''}">
+                    </div>
+                </div>
+            `;
+            break;
+    }
+    
+    content.innerHTML = inputHTML;
+    modal.classList.remove('hidden');
+    
+    setTimeout(() => {
+        const input = document.getElementById('edit-field-input');
+        if (input) input.focus();
+    }, 100);
 }
 
-// profile photo management
+function saveEditedField() {
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !editingField) return;
+    
+    let newValue;
+    
+    switch (editingField.type) {
+        case 'text':
+        case 'textarea':
+        case 'select':
+            newValue = document.getElementById('edit-field-input').value;
+            break;
+            
+        case 'multiselect':
+            newValue = Array.from(document.querySelectorAll('.multiselect-option:checked'))
+                .map(cb => cb.value);
+            break;
+            
+        case 'tags':
+            newValue = document.getElementById('edit-field-input').value
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag);
+            break;
+            
+        case 'address':
+            const street = document.getElementById('edit-street').value;
+            const suburb = document.getElementById('edit-suburb').value;
+            const postcode = document.getElementById('edit-postcode').value;
+            const state = document.getElementById('edit-state').value;
+            const country = document.getElementById('edit-country').value;
+            
+            newValue = {
+                street,
+                suburb,
+                state,
+                postcode,
+                country,
+                full: `${street}, ${suburb}, ${state} ${postcode}, ${country}`
+            };
+            break;
+    }
+
+    if (editingField.name === 'fullName') {
+        const parts = newValue.split(' ');
+        entity.firstName = parts[0] || '';
+        entity.lastName = parts.slice(1).join(' ') || '';
+    }
+    
+    entity[editingField.name] = newValue;
+    
+    // Recalculate age if birthday changed
+    if (editingField.name === 'birthday') {
+        entity.age = calculateAge(newValue);
+    }
+    
+    markAsChanged();
+    renderContent();
+    closeEditFieldModal();
+    showNotification('FIELD UPDATED', 'success');
+}
+
+function closeEditFieldModal() {
+    document.getElementById('edit-field-modal').classList.add('hidden');
+    editingField = null;
+}
+
+// Profile Photo Functions
 async function generateProfilePhoto() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || entity.type !== 'person') return;
     
     showNotification('GENERATING PHOTO...', 'info');
     
@@ -501,15 +1155,12 @@ async function generateProfilePhoto() {
         const objectUrl = URL.createObjectURL(blob);
         
         img.onload = async function() {
-            console.log('Original image dimensions:', img.width, 'x', img.height);
-            
             const canvas = document.createElement('canvas');
             const outputSize = 512;
             canvas.width = outputSize;
             canvas.height = outputSize;
             const ctx = canvas.getContext('2d');
             
-            // calculate scale to fit the entire image and slightly crop it
             const scale = (outputSize + 25) / Math.max(img.width, img.height);
             const scaledWidth = img.width * scale;
             const scaledHeight = img.height * scale;
@@ -525,8 +1176,8 @@ async function generateProfilePhoto() {
                 offsetX, offsetY, scaledWidth, scaledHeight  
             );
             
-            alias.profilePhoto = canvas.toDataURL('image/jpeg', 0.95);
-            alias.profilePhotoLocked = false;
+            entity.profilePhoto = canvas.toDataURL('image/jpeg', 0.95);
+            entity.profilePhotoLocked = false;
 
             URL.revokeObjectURL(objectUrl);
             
@@ -536,21 +1187,18 @@ async function generateProfilePhoto() {
         };
         
         img.onerror = function() {
-            console.error('Failed to load image from proxy');
             URL.revokeObjectURL(objectUrl);
-            generateFallbackAvatar(alias);
+            generateFallbackAvatar(entity);
         };
         
         img.src = objectUrl;
         
     } catch (error) {
-        console.error('Error generating photo:', error);
-        generateFallbackAvatar(alias);
+        generateFallbackAvatar(entity);
     }
 }
 
-// fallback avatars kinda eh
-function generateFallbackAvatar(alias) {
+function generateFallbackAvatar(entity) {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
@@ -563,59 +1211,234 @@ function generateFallbackAvatar(alias) {
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, 510, 510);
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 512; i += 64) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 512);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(512, i);
-        ctx.stroke();
-    }
-
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 120px JetBrains Mono';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const initials = alias.firstName[0] + alias.lastName[0];
+    
+    const initials = entity.type === 'person' 
+        ? (entity.firstName[0] + entity.lastName[0])
+        : entity.pageName.substring(0, 2).toUpperCase();
+    
     ctx.fillText(initials, 256, 256);
     
-    alias.profilePhoto = canvas.toDataURL('image/jpeg', 0.9);
-    alias.profilePhotoLocked = false;
+    entity.profilePhoto = canvas.toDataURL('image/jpeg', 0.9);
+    entity.profilePhotoLocked = false;
     markAsChanged();
     renderContent();
     showNotification('FALLBACK AVATAR GENERATED', 'warning');
 }
 
-async function lockProfilePhoto() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias || !alias.profilePhoto) return;
+function lockProfilePhoto() {
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !entity.profilePhoto) return;
     
-    alias.profilePhotoLocked = true;
+    entity.profilePhotoLocked = true;
     markAsChanged();
-
     downloadPhoto();
-    
     renderContent();
     showNotification('PHOTO LOCKED & SAVED', 'success');
 }
 
 function downloadPhoto() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias || !alias.profilePhoto) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !entity.profilePhoto) return;
     
     const link = document.createElement('a');
-    link.download = `${alias.fullName.replace(/\s+/g, '_')}_photo.jpg`;
-    link.href = alias.profilePhoto;
+    const name = entity.type === 'person' ? entity.fullName : entity.pageName;
+    link.download = `${name.replace(/\s+/g, '_')}_photo.jpg`;
+    link.href = entity.profilePhoto;
     link.click();
     showNotification('PHOTO DOWNLOADED', 'success');
 }
 
-//password stuff
+// Password Management
+function renderPasswords(entity) {
+    if (!entity.passwords || entity.passwords.length === 0) {
+        return '<p class="text-white/30 uppercase tracking-wider text-sm">No passwords saved</p>';
+    }
+    
+    return entity.passwords.map((pwd, index) => `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white/5 border border-white/10 rounded gap-2">
+            <div class="flex-1">
+                <p class="font-semibold text-sm sm:text-base">${pwd.service}</p>
+                <p class="text-xs sm:text-sm text-white/50 font-mono">${pwd.username}</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="copyPassword(${index})" class="mono-button-secondary px-2 sm:px-3 py-1 rounded text-xs sm:text-sm">COPY</button>
+                <button onclick="showPasswordValue(${index})" class="mono-button-secondary px-2 sm:px-3 py-1 rounded text-xs sm:text-sm">VIEW</button>
+                <button onclick="deletePassword(${index})" class="text-red-500 hover:text-red-400">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
 
+// TOTP Rendering and Management
+function renderTOTP(entity) {
+    if (!entity.totpSecrets || entity.totpSecrets.length === 0) {
+        return '<p class="text-white/30 uppercase tracking-wider text-sm">No TOTP configured</p>';
+    }
+    
+    return entity.totpSecrets.map((totp, index) => `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white/5 border border-white/10 rounded gap-4">
+            <div class="flex-1">
+                <p class="font-semibold mb-2">${totp.service}</p>
+                <div class="flex items-center space-x-4">
+                    <span class="totp-display font-mono" id="totp-code-${index}">------</span>
+                    <div class="relative w-10 h-10">
+                        <svg class="progress-ring w-10 h-10">
+                            <circle cx="20" cy="20" r="18" stroke="rgba(255, 255, 255, 0.1)" stroke-width="2" fill="none"/>
+                            <circle id="totp-progress-${index}" cx="20" cy="20" r="18" stroke="#ffffff" stroke-width="2" fill="none"
+                                stroke-dasharray="113" stroke-dashoffset="113"/>
+                        </svg>
+                    </div>
+                    <button onclick="copyTOTPCode(${index})" class="mono-button-secondary px-2 sm:px-3 py-1 rounded text-xs sm:text-sm">COPY</button>
+                </div>
+            </div>
+            <button onclick="deleteTOTP(${index})" class="text-red-500 hover:text-red-400">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+// Export Functions
+function exportAsCSV() {
+    if (entities.length === 0) {
+        showNotification('NO ENTITIES TO EXPORT', 'warning');
+        return;
+    }
+    
+    const headers = [
+        'Type', 'Name/Page', 'Username/Handle', 'Gender', 'Age', 'Birthday', 
+        'Favorite Color', 'Occupation', 'Education', 'Address', 'Interests', 
+        'Linguistic Features', 'Theme', 'Description', 'Target Audience',
+        'Passwords', 'TOTP Secrets', 'Notes', 'Created At'
+    ];
+    
+    let csv = headers.join(',') + '\n';
+    
+    entities.forEach(entity => {
+        const row = [];
+        
+        row.push(entity.type);
+        row.push(entity.type === 'person' ? entity.fullName : entity.pageName);
+        row.push(entity.type === 'person' ? entity.username : entity.handle);
+        row.push(entity.gender || '');
+        row.push(entity.age || '');
+        row.push(entity.birthday || '');
+        row.push(entity.favoriteColor || '');
+        row.push(entity.occupation || '');
+        row.push(entity.education || '');
+        row.push(entity.address ? entity.address.full : '');
+        row.push(entity.interests ? entity.interests.join('; ') : '');
+        row.push(entity.linguisticFeatures ? entity.linguisticFeatures.join('; ') : '');
+        row.push(entity.theme || '');
+        row.push(entity.description || '');
+        row.push(entity.targetAudience ? entity.targetAudience.join('; ') : '');
+        
+        // Passwords
+        const passwords = entity.passwords ? entity.passwords.map(p => 
+            `${p.service}:${p.username}:${atob(p.password)}`
+        ).join(' | ') : '';
+        row.push(`"${passwords}"`);
+        
+        // TOTP
+        const totps = entity.totpSecrets ? entity.totpSecrets.map(t => 
+            `${t.service}:${t.secret}`
+        ).join(' | ') : '';
+        row.push(`"${totps}"`);
+        
+        row.push(`"${entity.notes || ''}"`);
+        row.push(entity.createdAt);
+        
+        csv += row.map(field => {
+            if (typeof field === 'string' && field.includes(',')) {
+                return `"${field.replace(/"/g, '""')}"`;
+            }
+            return field;
+        }).join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ward_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('CSV EXPORTED', 'success');
+}
+
+function copyAsText() {
+    if (entities.length === 0) {
+        showNotification('NO ENTITIES TO COPY', 'warning');
+        return;
+    }
+    
+    let text = 'WARD IDENTITY EXPORT\n';
+    text += '=' .repeat(50) + '\n\n';
+    
+    entities.forEach((entity, idx) => {
+        text += `[${idx + 1}] ${entity.type.toUpperCase()}\n`;
+        text += '-'.repeat(30) + '\n';
+        
+        if (entity.type === 'person') {
+            text += `Name: ${entity.fullName}\n`;
+            text += `Username: ${entity.username}\n`;
+            text += `Gender: ${entity.gender}\n`;
+            text += `Age: ${entity.age} (Born: ${entity.birthday})\n`;
+            text += `Favorite Color: ${entity.favoriteColor}\n`;
+            text += `Occupation: ${entity.occupation}\n`;
+            text += `Education: ${entity.education}\n`;
+            text += `Address: ${entity.address.full}\n`;
+            text += `Interests: ${entity.interests.join(', ')}\n`;
+            text += `Linguistic Features: ${entity.linguisticFeatures.join('; ')}\n`;
+        } else {
+            text += `Page Name: ${entity.pageName}\n`;
+            text += `Handle: ${entity.handle}\n`;
+            text += `Theme: ${entity.theme}\n`;
+            text += `Description: ${entity.description}\n`;
+            text += `Target Audience: ${entity.targetAudience.join(', ')}\n`;
+            text += `Posting Style: ${entity.postingStyle}\n`;
+            text += `Voice Tone: ${entity.voiceTone}\n`;
+            text += `Content Pillars: ${entity.contentPillars.join(' | ')}\n`;
+            text += `Hashtags: ${entity.hashtags.join(' ')}\n`;
+        }
+        
+        if (entity.passwords && entity.passwords.length > 0) {
+            text += '\nPasswords:\n';
+            entity.passwords.forEach(pwd => {
+                text += `  - ${pwd.service}: ${pwd.username} / ${atob(pwd.password)}\n`;
+            });
+        }
+        
+        if (entity.totpSecrets && entity.totpSecrets.length > 0) {
+            text += '\nTOTP/2FA:\n';
+            entity.totpSecrets.forEach(totp => {
+                text += `  - ${totp.service}: ${totp.secret}\n`;
+            });
+        }
+        
+        if (entity.notes) {
+            text += `\nNotes: ${entity.notes}\n`;
+        }
+        
+        text += '\n' + '=' .repeat(50) + '\n\n';
+    });
+    
+    navigator.clipboard.writeText(text);
+    showNotification('COPIED TO CLIPBOARD', 'success');
+}
+
+// Password and TOTP Management Functions
 function showAddPasswordModal() {
     document.getElementById('add-password-modal').classList.remove('hidden');
     updatePasswordStrength();
@@ -630,7 +1453,7 @@ function closeAddPasswordModal() {
 
 function generatePassword() {
     const length = 16;
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$&?';
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$&?_-';
     let password = '';
     
     for (let i = 0; i < length; i++) {
@@ -688,8 +1511,8 @@ function updatePasswordStrength() {
 }
 
 function savePassword() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
     const service = document.getElementById('password-service').value;
     const username = document.getElementById('password-username').value;
@@ -700,9 +1523,9 @@ function savePassword() {
         return;
     }
     
-    if (!alias.passwords) alias.passwords = [];
+    if (!entity.passwords) entity.passwords = [];
     
-    alias.passwords.push({
+    entity.passwords.push({
         service,
         username,
         password: btoa(password)
@@ -715,35 +1538,35 @@ function savePassword() {
 }
 
 function showPasswordValue(index) {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias || !alias.passwords[index]) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !entity.passwords[index]) return;
     
-    const pwd = alias.passwords[index];
+    const pwd = entity.passwords[index];
     const password = atob(pwd.password);
     
     showNotification(`PASSWORD: ${password}`, 'info');
 }
 
 function copyPassword(index) {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias || !alias.passwords[index]) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !entity.passwords[index]) return;
     
-    const password = atob(alias.passwords[index].password);
+    const password = atob(entity.passwords[index].password);
     navigator.clipboard.writeText(password);
     showNotification('PASSWORD COPIED', 'success');
 }
 
 function deletePassword(index) {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
-    alias.passwords.splice(index, 1);
+    entity.passwords.splice(index, 1);
     markAsChanged();
     renderContent();
     showNotification('PASSWORD DELETED', 'success');
 }
 
-// TOTP management
+// TOTP Management
 function showAddTOTPModal() {
     document.getElementById('add-totp-modal').classList.remove('hidden');
 }
@@ -755,8 +1578,8 @@ function closeAddTOTPModal() {
 }
 
 function saveTOTP() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
     const service = document.getElementById('totp-service').value;
     const secret = document.getElementById('totp-secret').value;
@@ -766,9 +1589,9 @@ function saveTOTP() {
         return;
     }
     
-    if (!alias.totpSecrets) alias.totpSecrets = [];
+    if (!entity.totpSecrets) entity.totpSecrets = [];
     
-    alias.totpSecrets.push({
+    entity.totpSecrets.push({
         service,
         secret
     });
@@ -780,10 +1603,10 @@ function saveTOTP() {
 }
 
 function deleteTOTP(index) {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
-    alias.totpSecrets.splice(index, 1);
+    entity.totpSecrets.splice(index, 1);
     markAsChanged();
     renderContent();
     showNotification('TOTP REMOVED', 'success');
@@ -797,7 +1620,7 @@ function copyTOTPCode(index) {
     }
 }
 
-// TOTP code generation
+// TOTP Code Generation
 function generateTOTPCode(secret) {
     const time = Math.floor(Date.now() / 1000 / 30);
     const key = base32ToHex(secret);
@@ -844,13 +1667,13 @@ function startTOTPTimers() {
 }
 
 function updateTOTPCodes() {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias || !alias.totpSecrets) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity || !entity.totpSecrets) return;
     
     const timeRemaining = 30 - (Math.floor(Date.now() / 1000) % 30);
     const progress = (timeRemaining / 30) * 113;
     
-    alias.totpSecrets.forEach((totp, index) => {
+    entity.totpSecrets.forEach((totp, index) => {
         const codeElement = document.getElementById(`totp-code-${index}`);
         const progressElement = document.getElementById(`totp-progress-${index}`);
         
@@ -869,17 +1692,16 @@ function updateTOTPCodes() {
     });
 }
 
-// Notes management
+// Notes Management
 function updateNotes(value) {
-    const alias = aliases.find(a => a.id === currentAliasId);
-    if (!alias) return;
+    const entity = entities.find(e => e.id === currentEntityId);
+    if (!entity) return;
     
-    alias.notes = value;
+    entity.notes = value;
     markAsChanged();
 }
 
-
-// File operations
+// File Operations
 function exportFile() {
     document.getElementById('export-modal').classList.remove('hidden');
     document.getElementById('export-filename').value = `ward_${new Date().toISOString().split('T')[0]}.ward`;
@@ -898,7 +1720,7 @@ function confirmExport() {
     
     closeExportModal();
     showPasswordModal((password) => {
-        encryptAndDownload(aliases, password, filename);
+        encryptAndDownload(entities, password, filename);
         markAsSaved();
     });
 }
@@ -917,10 +1739,10 @@ function importFile() {
                 showPasswordModal(async (password) => {
                     try {
                         const decrypted = await decryptData(encryptedData, password);
-                        aliases = decrypted;
+                        entities = decrypted;
                         renderTabs();
-                        if (aliases.length > 0) {
-                            selectAlias(aliases[0].id);
+                        if (entities.length > 0) {
+                            selectEntity(entities[0].id);
                         }
                         markAsSaved();
                         showNotification('FILE IMPORTED', 'success');
@@ -937,8 +1759,7 @@ function importFile() {
     input.click();
 }
 
-// crypto functions
-
+// Crypto Functions
 async function encryptAndDownload(data, password, filename) {
     const salt = CryptoJS.lib.WordArray.random(256/8);
     const key = CryptoJS.PBKDF2(password, salt, {
@@ -958,7 +1779,7 @@ async function encryptAndDownload(data, password, filename) {
         iv: iv.toString(),
         data: encrypted.toString(),
         iterations: 100000,
-        version: '1.0'
+        version: '2.0'
     };
     
     const blob = new Blob([JSON.stringify(encryptedData, null, 2)], { type: 'application/json' });
@@ -989,8 +1810,7 @@ async function decryptData(encryptedData, password) {
     return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
 }
 
-// random utils
-
+// Utility Functions
 function showPasswordModal(callback) {
     passwordCallback = callback;
     document.getElementById('password-modal').classList.remove('hidden');
@@ -1016,52 +1836,113 @@ function confirmPassword() {
     closePasswordModal();
 }
 
+function showHelpModal() {
+    document.getElementById('help-modal').classList.remove('hidden');
+}
+
+function closeHelpModal() {
+    document.getElementById('help-modal').classList.add('hidden');
+}
+
+function showLoadingState(elementId, message = 'Loading...') {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <div class="loading-dots">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Keyboard Shortcuts
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !isAuthenticated) {
+            verifySystemPassword();
+            return;
+        }
+        
+        if (!isAuthenticated) return;
+        
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    exportFile();
+                    break;
+                case 'o':
+                    e.preventDefault();
+                    importFile();
+                    break;
+                case 'n':
+                    e.preventDefault();
+                    showNewEntityModal();
+                    break;
+                case 'e':
+                    e.preventDefault();
+                    exportAsCSV();
+                    break;
+                case 'c':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        copyAsText();
+                    }
+                    break;
+            }
+        }
+        
+        if (e.key === 'Escape') {
+            closePasswordModal();
+            closeAddPasswordModal();
+            closeAddTOTPModal();
+            closeNewEntityModal();
+            closeExportModal();
+            closeHelpModal();
+            closeEditFieldModal();
+        }
+    });
+    
+    // Password strength listener
+    document.addEventListener('DOMContentLoaded', () => {
+        const passwordInput = document.getElementById('password-value');
+        if (passwordInput) {
+            passwordInput.addEventListener('input', updatePasswordStrength);
+        }
+    });
+    
+    // Unsaved changes warning
+    window.addEventListener('beforeunload', (e) => {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+}
+
+
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuthentication();
+    setupKeyboardShortcuts();
+    
+    // Add event listener for password strength
     const passwordInput = document.getElementById('password-value');
     if (passwordInput) {
         passwordInput.addEventListener('input', updatePasswordStrength);
     }
-});
-
-// all the keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !isAuthenticated) {
-        verifySystemPassword();
-        return;
-    }
     
-    if (!isAuthenticated) return;
-    
-    if (e.ctrlKey || e.metaKey) {
-        switch(e.key) {
-            case 's':
-                e.preventDefault();
-                exportFile();
-                break;
-            case 'o':
-                e.preventDefault();
-                importFile();
-                break;
-            case 'n':
-                e.preventDefault();
-                showNewAliasModal();
-                break;
-        }
-    }
-    
-    if (e.key === 'Escape') {
-        closePasswordModal();
-        closeAddPasswordModal();
-        closeAddTOTPModal();
-        closeNewAliasModal();
-        closeExportModal();
-        closeHelpModal();
-    }
-});
-
-window.addEventListener('beforeunload', (e) => {
-    if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = '';
+    // Add event listener for gate password enter key
+    const gatePassword = document.getElementById('gate-password');
+    if (gatePassword) {
+        gatePassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifySystemPassword();
+            }
+        });
     }
 });

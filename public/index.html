@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ward - Alias Management System</title>
+    <title>Ward - Identity Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        
+    </style>
 </head>
 <body class="text-white cyber-grid">
     <div class="cyber-border border-b border-white/20 bg-black px-4 py-2">
-        <div class="flex items-center justify-between">
-            <!-- top bar / nav bar ? -->
-            <div class="flex items-center space-x-8">
-                <h1 class="text-2xl font-bold glow-text tracking-wider">WARD</h1>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center space-x-4 sm:space-x-8 w-full sm:w-auto">
+                <h1 class="text-xl sm:text-2xl font-bold tracking-wider">WARD</h1>
                 <div class="flex space-x-1">
-                    <div class="navbar-item" onclick="importFile()">
-                        <span class="text-sm uppercase tracking-wider">Import</span>
-                    </div>
-                    <div class="navbar-item" onclick="exportFile()">
-                        <span class="text-sm uppercase tracking-wider">Export</span>
-                    </div>
+                    <button class="navbar-item px-2 sm:px-4 py-1" onclick="importFile()">
+                        <span class="text-xs sm:text-sm uppercase tracking-wider">Import</span>
+                    </button>
+                    <button class="navbar-item px-2 sm:px-4 py-1" onclick="exportFile()">
+                        <span class="text-xs sm:text-sm uppercase tracking-wider">Export</span>
+                    </button>
+                    <button class="navbar-item px-2 sm:px-4 py-1" onclick="exportAsCSV()">
+                        <span class="text-xs sm:text-sm uppercase tracking-wider">CSV</span>
+                    </button>
+                    <button class="navbar-item px-2 sm:px-4 py-1" onclick="copyAsText()">
+                        <span class="text-xs sm:text-sm uppercase tracking-wider">Copy</span>
+                    </button>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
@@ -34,7 +42,7 @@
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                     </svg>
-                    <span class="text-xs uppercase tracking-wider">Unsaved Changes</span>
+                    <span class="text-xs uppercase tracking-wider hidden sm:inline">Unsaved</span>
                 </div>
             </div>
         </div>
@@ -42,9 +50,9 @@
 
     <div class="flex border-b border-white/20 bg-black/80 overflow-x-auto">
         <div id="tabs-container" class="flex">
-            <!-- tabs will added here -->
+            <!-- tabs will be added here -->
         </div>
-        <button onclick="showNewAliasModal()" class="px-4 py-2 hover:bg-white/10 transition-colors border-l border-white/20">
+        <button onclick="showNewEntityModal()" class="px-4 py-2 hover:bg-white/10 transition-colors border-l border-white/20">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
@@ -52,42 +60,42 @@
     </div>
 
     <!-- main content -->
-    <div id="content-container" class="p-6">
-            <div class="max-w-4xl mx-auto mt-10" id="welcome-message">
-                <div class="cyber-border rounded-lg text-center p-12 flicker">
-                    <h2 class="text-6xl font-bold glow-text tracking-widest">WARD</h2>
-                    <p class="text-lg text-white/70 mt-2 uppercase tracking-wider">Alias Management System</p>
+    <div id="content-container" class="p-4 sm:p-6">
+        <div class="max-w-4xl mx-auto mt-10" id="welcome-message">
+            <div class="cyber-border rounded-lg text-center p-8 sm:p-12 fade-in">
+                <h2 class="text-4xl sm:text-6xl font-bold tracking-widest">WARD</h2>
+                <p class="text-base sm:text-lg text-white/70 mt-2 uppercase tracking-wider">Identity Management System</p>
 
-                    <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        <div class="cyber-border-active p-6 rounded-lg">
-                            <div class="flex items-center mb-3">
-                                <svg class="w-6 h-6 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                <h3 class="text-xl font-semibold uppercase tracking-wider">Create an Alias</h3>
-                            </div>
-                            <p class="text-white/60">
-                                Click the <span class="font-bold text-white">+</span> button in the tab bar to generate a new, secure digital identity from scratch.
-                            </p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="cyber-border p-6 rounded-lg">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <h3 class="text-lg sm:text-xl font-semibold uppercase tracking-wider">Personal Identity</h3>
                         </div>
+                        <p class="text-white/60 text-sm">Generate complete personal profiles with AI photos, addresses, interests, and linguistic patterns.</p>
+                    </div>
 
-                        <div class="p-6">
-                            <div class="flex items-center mb-3">
-                                <svg class="w-6 h-6 mr-3 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                <h3 class="text-xl font-semibold uppercase tracking-wider">Manage Data</h3>
-                            </div>
-                            <p class="text-white/60">
-                                Use the <span class="font-bold text-white">Import</span> and <span class="font-bold text-white">Export</span> buttons in the main navigation to load or save your encrypted alias files.
-                            </p>
+                    <div class="cyber-border p-6 rounded-lg">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                            <h3 class="text-lg sm:text-xl font-semibold uppercase tracking-wider">Content Page</h3>
                         </div>
+                        <p class="text-white/60 text-sm">Create themed content pages for fan accounts, meme pages, or brand personas.</p>
                     </div>
                 </div>
             </div>
+        </div>
     </div>
 
-    <!-- password modal -->
-    <div id="password-gate-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-[300]">
-        <div class="cyber-border rounded-lg p-8 w-[500px]">
-            <h1 class="text-3xl font-bold mb-2 uppercase tracking-wider text-center">WARD</h1>
-            <p class="text-sm text-white/70 text-center mb-6">SECURE IDENTITY MANAGEMENT SYSTEM</p>
+    <!-- Password Gate Modal -->
+    <div id="password-gate-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-[300] p-4">
+        <div class="cyber-border rounded-lg p-6 sm:p-8 w-full max-w-[500px]">
+            <h1 class="text-2xl sm:text-3xl font-bold mb-2 uppercase tracking-wider text-center">WARD</h1>
+            <p class="text-xs sm:text-sm text-white/70 text-center mb-6">SECURE IDENTITY MANAGEMENT SYSTEM</p>
             <div class="border border-white/20 rounded p-4 mb-6 bg-white/5">
                 <p class="text-xs uppercase tracking-wider text-white/50 mb-2">System Notice</p>
                 <p class="text-sm">This is a closed system requiring authentication. Enter the system password to proceed.</p>
@@ -98,33 +106,30 @@
         </div>
     </div>
 
-    <!-- help modal -->
-    <div id="help-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[600px] max-h-[80vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-6 uppercase tracking-wider">About WARD</h3>
             <div class="space-y-4 text-sm">
                 <div>
-                    <h4 class="font-bold uppercase tracking-wider text-white/70 mb-2">What is WARD?</h4>
-                    <p class="text-white/90">WARD is an identity management system designed for creating and managing digital aliases. Each alias includes a complete identity profile with AI-generated photos, secure password storage, and 2FA authentication codes.</p>
+                    <h4 class="font-bold uppercase tracking-wider text-white/70 mb-2">Features</h4>
+                    <ul class="space-y-1 text-white/90">
+                        <li>• Personal identities with full profiles</li>
+                        <li>• Content page personas for social media</li>
+                        <li>• AI-generated profile photos</li>
+                        <li>• Password & 2FA management</li>
+                        <li>• Export to CSV or text summary</li>
+                        <li>• Full profile editing capabilities</li>
+                    </ul>
                 </div>
-                <div>
-                    <h4 class="font-bold uppercase tracking-wider text-white/70 mb-2">How to Use</h4>
-                    <ol class="space-y-1 text-white/90">
-                        <li>1. Click + to create a new alias</li>
-                        <li>2. Select a username from generated options</li>
-                        <li>3. AI face photo generates automatically</li>
-                        <li>4. Lock the photo to save it permanently</li>
-                        <li>5. Add passwords and TOTP secrets as needed</li>
-                        <li>6. Export regularly to save encrypted backups</li>
-                    </ol>
-                </div>
-    
                 <div>
                     <h4 class="font-bold uppercase tracking-wider text-white/70 mb-2">Keyboard Shortcuts</h4>
                     <ul class="space-y-1 text-white/90 font-mono">
-                        <li>Ctrl+N - New alias</li>
+                        <li>Ctrl+N - New entity</li>
                         <li>Ctrl+S - Export file</li>
                         <li>Ctrl+O - Import file</li>
+                        <li>Ctrl+E - Export CSV</li>
+                        <li>Ctrl+C - Copy as text</li>
                         <li>ESC - Close modals</li>
                     </ul>
                 </div>
@@ -135,24 +140,62 @@
         </div>
     </div>
 
-    <!-- new alias modal -->
-    <div id="new-alias-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
-            <h3 class="text-xl font-bold mb-6 uppercase tracking-wider">Generate New Identity</h3>
-            <div id="preview-content" class="space-y-4 mb-6">
-                <!-- preview shown here -->
+    <!-- New Entity Modal -->
+    <div id="new-entity-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-6 uppercase tracking-wider">Create New Entity</h3>
+            
+            <div class="entity-type-selector mb-6">
+                <div class="entity-card" onclick="selectEntityType('person')">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <h4 class="font-bold uppercase mb-2">Personal Identity</h4>
+                        <p class="text-xs text-white/60">Complete human profile with demographics, interests, and behaviors</p>
+                    </div>
+                </div>
+                
+                <div class="entity-card" onclick="selectEntityType('content')">
+                    <div class="text-center">
+                        <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h4 class="font-bold uppercase mb-2">Content Page</h4>
+                        <p class="text-xs text-white/60">Theme-based page for memes, fans, or brand content</p>
+                    </div>
+                </div>
             </div>
+            
+            <div id="preview-content" class="space-y-4 mb-6 hidden">
+                <!-- preview will be shown here -->
+            </div>
+            
             <div class="flex justify-end space-x-3">
-                <button onclick="regeneratePreview()" class="mono-button-secondary px-4 py-2 rounded">Regenerate</button>
-                <button onclick="closeNewAliasModal()" class="mono-button-secondary px-4 py-2 rounded">Cancel</button>
-                <button onclick="confirmNewAlias()" class="mono-button px-4 py-2 rounded">Create Alias</button>
+                <button id="regenerate-btn" onclick="regeneratePreview()" class="mono-button-secondary px-4 py-2 rounded hidden">Regenerate</button>
+                <button onclick="closeNewEntityModal()" class="mono-button-secondary px-4 py-2 rounded">Cancel</button>
+                <button id="create-btn" onclick="confirmNewEntity()" class="mono-button px-4 py-2 rounded hidden">Create</button>
             </div>
         </div>
     </div>
 
-    <!-- password modal -->
-    <div id="password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-96">
+    <!-- Edit Field Modal -->
+    <div id="edit-field-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[500px] max-h-[80vh] overflow-y-auto">
+            <h3 id="edit-field-title" class="text-xl font-bold mb-4 uppercase tracking-wider">Edit Field</h3>
+            <div id="edit-field-content">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeEditFieldModal()" class="mono-button-secondary px-4 py-2 rounded">Cancel</button>
+                <button onclick="saveEditedField()" class="mono-button px-4 py-2 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[400px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Enter Password</h3>
             <input type="password" id="modal-password" class="mono-input w-full px-4 py-2 rounded text-white mb-4" placeholder="Password">
             <div class="flex justify-end space-x-3">
@@ -162,9 +205,9 @@
         </div>
     </div>
 
-    <!-- add password modal -->
-    <div id="add-password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-[500px]">
+    <!-- Add Password Modal -->
+    <div id="add-password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[500px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Add Password</h3>
             <div class="space-y-4">
                 <div>
@@ -179,7 +222,7 @@
                     <label class="text-xs text-white/50 uppercase tracking-wider">Password</label>
                     <div class="flex space-x-2">
                         <input type="password" id="password-value" class="mono-input flex-1 px-4 py-2 rounded text-white" placeholder="Password">
-                        <button onclick="generatePassword()" class="mono-button-secondary px-4 py-2 rounded">Generate</button>
+                        <button onclick="generatePassword()" class="mono-button-secondary px-4 py-2 rounded">Gen</button>
                         <button onclick="togglePasswordVisibility()" class="mono-button-secondary px-4 py-2 rounded">
                             <svg id="password-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -203,9 +246,9 @@
         </div>
     </div>
 
-    <!-- add totp modal -->
-    <div id="add-totp-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-[500px]">
+    <!-- Add TOTP Modal -->
+    <div id="add-totp-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[500px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Add 2FA</h3>
             <div class="space-y-4">
                 <div>
@@ -224,9 +267,9 @@
         </div>
     </div>
 
-    <!-- export file modal -->
-    <div id="export-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden">
-        <div class="cyber-border rounded-lg p-6 w-[400px]">
+    <!-- Export Modal -->
+    <div id="export-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
+        <div class="cyber-border rounded-lg p-6 w-full max-w-[400px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Export File</h3>
             <div class="space-y-4">
                 <div>
@@ -241,18 +284,12 @@
         </div>
     </div>
 
-    <!-- notifications -->
+    <!-- Notifications -->
     <div id="notification-container" class="fixed bottom-4 right-4 z-[200] space-y-2">
-        
     </div>
 
-    <!-- file input -->
+    <!-- File input -->
     <input type="file" id="file-input" accept=".ward" class="hidden">
-
-    <!-- hidden iframe for photo loading -->
-    <div id="photo-loader" style="position: fixed; top: -9999px; left: -9999px; width: 512px; height: 512px;">
-        <img id="photo-img" crossorigin="anonymous" style="width: 512px; height: 512px;">
-    </div>
 
     <script src="js/app.js"></script>
 </body>

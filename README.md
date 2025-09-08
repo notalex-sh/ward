@@ -4,8 +4,6 @@ WARD is an identity management system for creating and managing digital aliases.
 
 > **Important**: Never share your encryption password with anyone. If you lose your password, you will not be able to decrypt your data.
 
-There **is** a live deployment of Ward available however it is *closed* access. Contact me hello@notalex.sh for more information.
-
 ## Features 
 
 * **Realistic Identity Generation**: Creates believable identities with Australian addresses and details.
@@ -38,7 +36,7 @@ There **is** a live deployment of Ward available however it is *closed* access. 
     ```
 4.  **Start the server:**
     ```bash
-    npm run dev
+    node server.js
     ```
 5.  Open your browser and navigate to `http://localhost:3000`. You will be prompted to enter the system password you set in the `.env` file.
 

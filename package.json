@@ -1,11 +1,12 @@
 {
   "name": "ward",
-  "version": "1.0.0",
-  "description": "Alias/Sock Puppet Management Application",
-  "main": "server.js",
+  "version": "2.0.0",
+  "description": "Advanced Alias/Identity Management System with AI face generation, password vault, 2FA, and military-grade encryption",
+  "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "nodemon api/index.js"
+    "dev": "nodemon api/index.js",
+    "build-css": "npx tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -17,6 +18,7 @@
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "tailwindcss": "^3.4.0"
   }
 }

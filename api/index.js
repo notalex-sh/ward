@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SYSTEM_PASSWORD = process.env.WARD_PASSWORD || "ward2024";
+const SYSTEM_PASSWORD = process.env.WARD_PASSWORD;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));

@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const crypto = require('crypto');
-const fs = require('fs').promises;
 const https = require('https');
 require('dotenv').config();
 
@@ -11,9 +9,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
-// data pools for generation
 const dataPool = {
     firstNames: {
         male: [
@@ -36,20 +33,13 @@ const dataPool = {
         'Campbell', 'Miller', 'Clark', 'Garcia', 'Martinez', 'Scott', 'Murphy', 'Singh', 'Young', 'Mitchell'
     ],
     waSuburbs: [
-        { name: 'Perth', postcode: '6000' },
-        { name: 'Fremantle', postcode: '6160' },
-        { name: 'Joondalup', postcode: '6027' },
-        { name: 'Rockingham', postcode: '6168' },
-        { name: 'Mandurah', postcode: '6210' },
-        { name: 'Bunbury', postcode: '6230' },
-        { name: 'Albany', postcode: '6330' },
-        { name: 'Kalgoorlie', postcode: '6430' },
-        { name: 'Geraldton', postcode: '6530' },
-        { name: 'Broome', postcode: '6725' },
-        { name: 'Scarborough', postcode: '6019' },
-        { name: 'Subiaco', postcode: '6008' },
-        { name: 'Claremont', postcode: '6010' },
-        { name: 'Cottesloe', postcode: '6011' },
+        { name: 'Perth', postcode: '6000' }, { name: 'Fremantle', postcode: '6160' },
+        { name: 'Joondalup', postcode: '6027' }, { name: 'Rockingham', postcode: '6168' },
+        { name: 'Mandurah', postcode: '6210' }, { name: 'Bunbury', postcode: '6230' },
+        { name: 'Albany', postcode: '6330' }, { name: 'Kalgoorlie', postcode: '6430' },
+        { name: 'Geraldton', postcode: '6530' }, { name: 'Broome', postcode: '6725' },
+        { name: 'Scarborough', postcode: '6019' }, { name: 'Subiaco', postcode: '6008' },
+        { name: 'Claremont', postcode: '6010' }, { name: 'Cottesloe', postcode: '6011' },
         { name: 'Midland', postcode: '6056' }
     ],
     colors: ['Blue', 'Green', 'Red', 'Purple', 'Orange', 'Yellow', 'Black', 'White', 'Pink', 'Teal', 'Gray', 'Indigo'],
@@ -64,96 +54,39 @@ const dataPool = {
         'Uses lots of emojis 😊', 'Formal writing style', 'Casual and friendly', 'Uses slang frequently',
         'Grammatically perfect', 'Makes occasional typos', 'Uses ALL CAPS for emphasis', 'Minimalist responses',
         'Writes long paragraphs', 'Short, punchy sentences', 'Uses British spelling', 'Uses American spelling',
-        'Lots of exclamation marks!', 'Never uses punctuation', 'Academic vocabulary', 'Simple language',
-        'Uses metaphors often', 'Very literal communication', 'Asks lots of questions', 'Makes pop culture references',
-        'Uses hashtags frequently', 'Avoids contractions', 'Double spaces after periods', 'Uses oxford comma',
-        'Starts sentences with conjunctions', 'Uses passive voice', 'Very direct and blunt', 'Diplomatic and careful'
+        'Lots of exclamation marks!', 'Never uses punctuation', 'Academic vocabulary', 'Simple language'
     ],
     occupations: [
-        'Software Developer', 'Marketing Manager', 'Teacher', 'Graphic Designer', 'Consultant', 
-        'Freelancer', 'Student', 'Entrepreneur', 'Writer', 'Engineer', 'Data Scientist',
-        'Product Manager', 'Sales Executive', 'HR Manager', 'Accountant', 'Lawyer', 'Doctor',
-        'Nurse', 'Architect', 'Chef', 'Photographer', 'Real Estate Agent', 'Financial Analyst',
-        'Project Manager', 'UX Designer', 'Content Creator', 'Social Media Manager'
+        'Software Developer', 'Marketing Manager', 'Teacher', 'Graphic Designer', 'Consultant', 'Freelancer',
+        'Student', 'Entrepreneur', 'Writer', 'Engineer', 'Data Scientist', 'Product Manager', 'UX Designer'
     ],
     educationDegrees: [
-        'Bachelor of Science', 'Bachelor of Arts', 'Master of Business Administration', 'PhD', 
-        'High School Diploma', 'Associate Degree', 'Trade Certificate', 'Bachelor of Engineering',
-        'Master of Science', 'Bachelor of Commerce', 'Doctor of Medicine', 'Juris Doctor'
+        'Bachelor of Science', 'Bachelor of Arts', 'Master of Business Administration', 'PhD', 'High School Diploma',
+        'Associate Degree', 'Trade Certificate', 'Bachelor of Engineering', 'Master of Science'
     ],
     educationFields: [
-        'Computer Science', 'Business', 'Psychology', 'Engineering', 'Medicine', 'Education', 
-        'Marketing', 'Design', 'Communications', 'Economics', 'Biology', 'Mathematics',
-        'Literature', 'History', 'Chemistry', 'Physics', 'Law', 'Accounting', 'Finance',
-        'Information Technology', 'Data Science', 'Artificial Intelligence'
+        'Computer Science', 'Business', 'Psychology', 'Engineering', 'Medicine', 'Education', 'Marketing',
+        'Design', 'Communications', 'Economics', 'Biology', 'Mathematics', 'Literature'
     ],
-    contentThemes: [
-        'Memes', 'Tech News', 'Gaming', 'Fashion', 'Food & Recipes', 'Travel Photos', 'Fitness Tips',
-        'Movie Reviews', 'Music Discovery', 'Art Gallery', 'Nature Photography', 'Science Facts',
-        'History Trivia', 'DIY Tutorials', 'Life Hacks', 'Motivational Quotes', 'Comedy Sketches',
-        'Book Reviews', 'Pet Content', 'Sports Highlights', 'Cryptocurrency', 'Sustainable Living',
-        'Mental Health', 'Parenting Tips', 'Career Advice', 'Educational Content', 'Luxury Lifestyle',
-        'Street Art', 'Anime Culture', 'True Crime', 'Space Exploration', 'Car Enthusiast'
-    ],
-    postingStyles: [
-        'Daily multiple posts', 'Weekly curated content', 'Sporadic but high quality', 'Scheduled posts only',
-        'Real-time engagement', 'Story-focused', 'Video-heavy', 'Text-only posts', 'Infographic specialist',
-        'Repost with commentary', 'Original content only', 'Mix of OC and shares', 'Thread storyteller',
-        'Carousel posts', 'Live streaming regular', 'Poll and quiz creator', 'Behind-the-scenes content'
-    ],
-    targetAudiences: [
-        'Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Tech enthusiasts', 'Creative professionals',
-        'Students', 'Parents', 'Entrepreneurs', 'Gamers', 'Fitness enthusiasts', 'Foodies',
-        'Travel lovers', 'Pet owners', 'Music fans', 'Movie buffs', 'Book readers', 'Everyone',
-        'Young professionals', 'Remote workers', 'Artists', 'Investors', 'Educators', 'Healthcare workers'
-    ],
-    voiceTones: [
-        'Friendly & approachable', 'Professional & informative', 'Humorous & witty', 
-        'Inspirational & motivating', 'Casual & conversational', 'Edgy & bold',
-        'Mysterious & intriguing', 'Educational & helpful', 'Sarcastic & ironic',
-        'Enthusiastic & energetic', 'Calm & soothing', 'Authoritative & expert'
-    ]
 };
 
-// cache for street names
-const streetCache = new Map();
 const defaultStreets = [
     'Main Street', 'High Street', 'Church Street', 'Victoria Street',
     'King Street', 'Queen Street', 'Park Road', 'Station Road',
-    'George Street', 'William Street', 'Elizabeth Street', 'Market Street',
-    'Railway Street', 'Ocean Drive', 'Beach Road', 'Harbour Street'
+    'George Street', 'William Street', 'Elizabeth Street', 'Market Street'
 ];
 
 async function getStreetsForSuburb(suburbName, state = 'WA') {
-    const cacheKey = `${suburbName}-${state}`;
-    if (streetCache.has(cacheKey)) {
-        return streetCache.get(cacheKey);
-    }
-    return defaultStreets;
-}
-
-// pre-cache all street data on server start
-async function cacheAllStreetData() {
-    console.log('Pre-caching street data for all suburbs...');
-    const promises = dataPool.waSuburbs.map(suburb => fetchAndCacheStreets(suburb.name));
-    await Promise.all(promises);
-    console.log('Street data caching complete.');
-}
-
-async function fetchAndCacheStreets(suburbName, state = 'WA') {
-    const cacheKey = `${suburbName}-${state}`;
     try {
         const query = `
-            [out:json][timeout:5];
+            [out:json][timeout:10];
             area["name"="${suburbName}"]["admin_level"="9"]["boundary"="administrative"];
-            (
-              way["highway"]["name"](area);
-            );
+            (way["highway"]["name"](area););
             out body;
         `;
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
         const response = await fetch('https://overpass-api.de/api/interpreter', {
             method: 'POST',
@@ -178,15 +111,15 @@ async function fetchAndCacheStreets(suburbName, state = 'WA') {
 
         const streets = Array.from(streetSet);
         if (streets.length > 0) {
-            streetCache.set(cacheKey, streets);
-            console.log(`Successfully cached ${streets.length} streets for ${suburbName}.`);
+            console.log(`Successfully fetched ${streets.length} streets for ${suburbName}.`);
+            return streets;
         } else {
-            streetCache.set(cacheKey, defaultStreets);
             console.log(`No streets found for ${suburbName}, using defaults.`);
+            return defaultStreets;
         }
     } catch (error) {
         console.error(`Failed to fetch street data for ${suburbName}: ${error.message}. Using defaults.`);
-        streetCache.set(cacheKey, defaultStreets);
+        return defaultStreets;
     }
 }
 
@@ -246,18 +179,9 @@ app.get('/api/generate-alias', async (req, res) => {
         const education = `${degree} in ${field}`;
         
         res.json({
-            firstName,
-            lastName,
-            fullName: `${firstName} ${lastName}`,
-            gender,
-            birthday,
-            age: calculateAge(birthday),
-            address,
-            favoriteColor,
-            interests,
-            linguisticFeatures,
-            occupation,
-            education
+            firstName, lastName, fullName: `${firstName} ${lastName}`, gender,
+            birthday, age: calculateAge(birthday), address, favoriteColor,
+            interests, linguisticFeatures, occupation, education
         });
     } catch (error) {
         console.error("Error in /api/generate-alias:", error);
@@ -273,10 +197,6 @@ app.get('/api/generate-face', (req, res) => {
         method: 'GET',
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'image/jpeg,image/*',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
         }
     };
 
@@ -291,9 +211,10 @@ app.get('/api/generate-face', (req, res) => {
     req.pipe(proxyReq, { end: true });
 });
 
-app.listen(PORT, async () => {
-    console.log(`Ward server running on http://localhost:${PORT}`);
-    await cacheAllStreetData();
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Ward server running locally on http://localhost:${PORT}`);
+    });
+}
 
 module.exports = app;

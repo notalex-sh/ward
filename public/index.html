@@ -50,8 +50,7 @@
 
     <div class="flex border-b border-white/20 bg-black/80 overflow-x-auto">
         <div id="tabs-container" class="flex">
-            <!-- tabs will be added here -->
-        </div>
+            </div>
         <button onclick="showNewEntityModal()" class="px-4 py-2 hover:bg-white/10 transition-colors border-l border-white/20">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -59,7 +58,6 @@
         </button>
     </div>
 
-    <!-- main content -->
     <div id="content-container" class="p-4 sm:p-6">
         <div class="max-w-4xl mx-auto mt-10" id="welcome-message">
             <div class="cyber-border rounded-lg text-center p-8 sm:p-12 fade-in">
@@ -91,22 +89,6 @@
         </div>
     </div>
 
-    <!-- Password Gate Modal -->
-    <div id="password-gate-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-[300] p-4">
-        <div class="cyber-border rounded-lg p-6 sm:p-8 w-full max-w-[500px]">
-            <h1 class="text-2xl sm:text-3xl font-bold mb-2 uppercase tracking-wider text-center">WARD</h1>
-            <p class="text-xs sm:text-sm text-white/70 text-center mb-6">SECURE IDENTITY MANAGEMENT SYSTEM</p>
-            <div class="border border-white/20 rounded p-4 mb-6 bg-white/5">
-                <p class="text-xs uppercase tracking-wider text-white/50 mb-2">System Notice</p>
-                <p class="text-sm">This is a closed system requiring authentication. Enter the system password to proceed.</p>
-            </div>
-            <input type="password" id="gate-password" class="mono-input w-full px-4 py-3 rounded text-white mb-4" placeholder="SYSTEM PASSWORD" autofocus>
-            <button onclick="verifySystemPassword()" class="mono-button w-full py-3 rounded uppercase tracking-wider">ACCESS SYSTEM</button>
-            <div id="gate-error" class="text-red-500 text-sm text-center mt-4 hidden">ACCESS DENIED - INVALID PASSWORD</div>
-        </div>
-    </div>
-
-    <!-- Help Modal -->
     <div id="help-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[600px] max-h-[80vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-6 uppercase tracking-wider">About WARD</h3>
@@ -129,7 +111,7 @@
                         <li>Ctrl+S - Export file</li>
                         <li>Ctrl+O - Import file</li>
                         <li>Ctrl+E - Export CSV</li>
-                        <li>Ctrl+C - Copy as text</li>
+                        <li>Ctrl+Shift+C - Copy as text</li>
                         <li>ESC - Close modals</li>
                     </ul>
                 </div>
@@ -140,7 +122,6 @@
         </div>
     </div>
 
-    <!-- New Entity Modal -->
     <div id="new-entity-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[700px] max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-6 uppercase tracking-wider">Create New Entity</h3>
@@ -168,8 +149,7 @@
             </div>
             
             <div id="preview-content" class="space-y-4 mb-6 hidden">
-                <!-- preview will be shown here -->
-            </div>
+                </div>
             
             <div class="flex justify-end space-x-3">
                 <button id="regenerate-btn" onclick="regeneratePreview()" class="mono-button-secondary px-4 py-2 rounded hidden">Regenerate</button>
@@ -179,13 +159,11 @@
         </div>
     </div>
 
-    <!-- Edit Field Modal -->
     <div id="edit-field-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[500px] max-h-[80vh] overflow-y-auto">
             <h3 id="edit-field-title" class="text-xl font-bold mb-4 uppercase tracking-wider">Edit Field</h3>
             <div id="edit-field-content">
-                <!-- Dynamic content will be inserted here -->
-            </div>
+                </div>
             <div class="flex justify-end space-x-3 mt-6">
                 <button onclick="closeEditFieldModal()" class="mono-button-secondary px-4 py-2 rounded">Cancel</button>
                 <button onclick="saveEditedField()" class="mono-button px-4 py-2 rounded">Save</button>
@@ -193,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Password Modal -->
     <div id="password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[400px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Enter Password</h3>
@@ -205,7 +182,6 @@
         </div>
     </div>
 
-    <!-- Add Password Modal -->
     <div id="add-password-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[500px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Add Password</h3>
@@ -246,7 +222,6 @@
         </div>
     </div>
 
-    <!-- Add TOTP Modal -->
     <div id="add-totp-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[500px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Add 2FA</h3>
@@ -267,7 +242,6 @@
         </div>
     </div>
 
-    <!-- Export Modal -->
     <div id="export-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center z-50 hidden p-4">
         <div class="cyber-border rounded-lg p-6 w-full max-w-[400px]">
             <h3 class="text-xl font-bold mb-4 uppercase tracking-wider">Export File</h3>
@@ -284,11 +258,9 @@
         </div>
     </div>
 
-    <!-- Notifications -->
     <div id="notification-container" class="fixed bottom-4 right-4 z-[200] space-y-2">
     </div>
 
-    <!-- File input -->
     <input type="file" id="file-input" accept=".ward" class="hidden">
 
     <script src="js/app.js"></script>

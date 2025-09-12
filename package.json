@@ -1,6 +1,6 @@
 {
   "name": "ward",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Advanced Alias/Identity Management System with AI face generation, password vault, 2FA, and military-grade encryption",
   "main": "api/index.js",
   "scripts": {

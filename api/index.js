@@ -8,13 +8,12 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SYSTEM_PASSWORD = process.env.WARD_PASSWORD;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// Enhanced data pools for generation
+// data pools for generation
 const dataPool = {
     firstNames: {
         male: [
@@ -116,74 +115,81 @@ const dataPool = {
     ]
 };
 
-// Cache for street names
+// cache for street names
 const streetCache = new Map();
+const defaultStreets = [
+    'Main Street', 'High Street', 'Church Street', 'Victoria Street',
+    'King Street', 'Queen Street', 'Park Road', 'Station Road',
+    'George Street', 'William Street', 'Elizabeth Street', 'Market Street',
+    'Railway Street', 'Ocean Drive', 'Beach Road', 'Harbour Street'
+];
 
 async function getStreetsForSuburb(suburbName, state = 'WA') {
     const cacheKey = `${suburbName}-${state}`;
     if (streetCache.has(cacheKey)) {
         return streetCache.get(cacheKey);
     }
-
-    const query = `
-        [out:json];
-        area["name"="${suburbName}"]["admin_level"="9"]["boundary"="administrative"];
-        (
-          way["highway"]["name"](area);
-        );
-        out body;
-    `;
-    
-    const options = {
-        hostname: 'overpass-api.de',
-        path: '/api/interpreter',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-    };
-
-    return new Promise((resolve, reject) => {
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk) => {
-                data += chunk;
-            });
-            res.on('end', () => {
-                try {
-                    const jsonData = JSON.parse(data);
-                    const streetSet = new Set();
-                    jsonData.elements.forEach(element => {
-                        if (element.tags && element.tags.name) {
-                            streetSet.add(element.tags.name);
-                        }
-                    });
-
-                    const streets = Array.from(streetSet);
-                    if (streets.length > 0) {
-                        streetCache.set(cacheKey, streets);
-                        resolve(streets);
-                    } else {
-                        resolve(['Main Street', 'High Street', 'Church Street', 'Victoria Street']);
-                    }
-                } catch (error) {
-                    console.error("Failed to parse Overpass API response:", error);
-                    resolve(['Victoria Street', 'King Street', 'Queen Street']); 
-                }
-            });
-        });
-
-        req.on('error', (error) => {
-            console.error("Error calling Overpass API:", error);
-            resolve(['St Georges Terrace', 'Wellington Street', 'Murray Street']);
-        });
-
-        req.write('data=' + encodeURIComponent(query));
-        req.end();
-    });
+    return defaultStreets;
 }
 
-// Helper functions
+// pre-cache all street data on server start
+async function cacheAllStreetData() {
+    console.log('Pre-caching street data for all suburbs...');
+    const promises = dataPool.waSuburbs.map(suburb => fetchAndCacheStreets(suburb.name));
+    await Promise.all(promises);
+    console.log('Street data caching complete.');
+}
+
+async function fetchAndCacheStreets(suburbName, state = 'WA') {
+    const cacheKey = `${suburbName}-${state}`;
+    try {
+        const query = `
+            [out:json][timeout:5];
+            area["name"="${suburbName}"]["admin_level"="9"]["boundary"="administrative"];
+            (
+              way["highway"]["name"](area);
+            );
+            out body;
+        `;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(query),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+        }
+
+        const jsonData = await response.json();
+        const streetSet = new Set();
+        jsonData.elements.forEach(element => {
+            if (element.tags && element.tags.name) {
+                streetSet.add(element.tags.name);
+            }
+        });
+
+        const streets = Array.from(streetSet);
+        if (streets.length > 0) {
+            streetCache.set(cacheKey, streets);
+            console.log(`Successfully cached ${streets.length} streets for ${suburbName}.`);
+        } else {
+            streetCache.set(cacheKey, defaultStreets);
+            console.log(`No streets found for ${suburbName}, using defaults.`);
+        }
+    } catch (error) {
+        console.error(`Failed to fetch street data for ${suburbName}: ${error.message}. Using defaults.`);
+        streetCache.set(cacheKey, defaultStreets);
+    }
+}
+
 function getRandomItems(array, count) {
     const shuffled = [...array].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
@@ -200,236 +206,65 @@ function calculateAge(birthday) {
     return age;
 }
 
-// Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.post('/api/verify-system-password', (req, res) => {
-    const { password } = req.body;
-    
-    if (password === SYSTEM_PASSWORD) {
-        res.json({ authenticated: true });
-    } else {
-        res.status(401).json({ authenticated: false });
-    }
-});
-
-// Enhanced alias generation for personal profiles
 app.get('/api/generate-alias', async (req, res) => {
-    const gender = Math.random() > 0.5 ? 'male' : 'female';
-    const firstName = dataPool.firstNames[gender][Math.floor(Math.random() * dataPool.firstNames[gender].length)];
-    const lastName = dataPool.lastNames[Math.floor(Math.random() * dataPool.lastNames.length)];
-    
-    const currentYear = new Date().getFullYear();
-    const birthYear = currentYear - Math.floor(Math.random() * 47 + 18);
-    const birthMonth = Math.floor(Math.random() * 12 + 1);
-    const birthDay = Math.floor(Math.random() * 28 + 1);
-    const birthday = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
-    
-    const streetNumber = Math.floor(Math.random() * 200 + 1);
-    const suburb = dataPool.waSuburbs[Math.floor(Math.random() * dataPool.waSuburbs.length)];
-    
-    const availableStreets = await getStreetsForSuburb(suburb.name);
-    const streetName = availableStreets[Math.floor(Math.random() * availableStreets.length)];
-    
-    const address = {
-        street: `${streetNumber} ${streetName}`,
-        suburb: suburb.name,
-        state: 'WA',
-        postcode: suburb.postcode,
-        country: 'Australia',
-        full: `${streetNumber} ${streetName}, ${suburb.name}, WA ${suburb.postcode}, Australia`
-    };
-    
-    // Enhanced with new fields
-    const favoriteColor = dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)];
-    const interests = getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3));
-    const linguisticFeatures = getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2));
-    const occupation = dataPool.occupations[Math.floor(Math.random() * dataPool.occupations.length)];
-    const degree = dataPool.educationDegrees[Math.floor(Math.random() * dataPool.educationDegrees.length)];
-    const field = dataPool.educationFields[Math.floor(Math.random() * dataPool.educationFields.length)];
-    const education = `${degree} in ${field}`;
-    
-    res.json({
-        firstName,
-        lastName,
-        fullName: `${firstName} ${lastName}`,
-        gender,
-        birthday,
-        age: calculateAge(birthday),
-        address,
-        favoriteColor,
-        interests,
-        linguisticFeatures,
-        occupation,
-        education
-    });
-});
-
-// New endpoint for content page generation
-app.get('/api/generate-content-page', (req, res) => {
-    const theme = dataPool.contentThemes[Math.floor(Math.random() * dataPool.contentThemes.length)];
-    const prefixes = ['The', 'Daily', 'Epic', 'Ultimate', 'Best', 'Top', 'Viral', 'Amazing', 'Awesome', 'Creative'];
-    const suffixes = ['Hub', 'Zone', 'Central', 'World', 'Daily', 'Life', 'Vibes', 'Nation', 'Squad', 'Studio'];
-    
-    let pageName;
-    if (Math.random() > 0.5) {
-        pageName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${theme}`;
-    } else {
-        pageName = `${theme} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
-    }
-    
-    const handle = `@${pageName.toLowerCase().replace(/\s+/g, '')}${Math.floor(Math.random() * 999)}`;
-    
-    const descriptionTemplates = [
-        `Your daily dose of ${theme.toLowerCase()} content 🔥`,
-        `Bringing you the best ${theme.toLowerCase()} from around the web`,
-        `${theme} enthusiast | Curator of awesome content`,
-        `All about ${theme.toLowerCase()} | Follow for daily updates`,
-        `${theme} content that makes your day better ✨`,
-        `Discover amazing ${theme.toLowerCase()} content here`,
-        `The ultimate source for ${theme.toLowerCase()} inspiration`
-    ];
-    
-    const description = descriptionTemplates[Math.floor(Math.random() * descriptionTemplates.length)];
-    const postingStyle = dataPool.postingStyles[Math.floor(Math.random() * dataPool.postingStyles.length)];
-    const targetAudience = getRandomItems(dataPool.targetAudiences, 1 + Math.floor(Math.random() * 2));
-    const voiceTone = dataPool.voiceTones[Math.floor(Math.random() * dataPool.voiceTones.length)];
-    
-    const frequencies = ['3-5 posts/day', '1-2 posts/day', '5-7 posts/week', '3-4 posts/week', 'Daily posts'];
-    const postingFrequency = frequencies[Math.floor(Math.random() * frequencies.length)];
-    
-    const contentPillars = generateContentPillars(theme);
-    const hashtags = generateHashtags(theme);
-    const bestPostingTimes = generatePostingTimes();
-    
-    res.json({
-        pageName,
-        handle,
-        theme,
-        description,
-        postingStyle,
-        targetAudience,
-        postingFrequency,
-        contentPillars,
-        voiceTone,
-        hashtags,
-        bestPostingTimes
-    });
-});
-
-function generateContentPillars(theme) {
-    const pillars = {
-        'Memes': ['Trending formats', 'Original content', 'Relatable humor', 'Pop culture', 'Current events'],
-        'Tech News': ['Product launches', 'Industry analysis', 'Reviews', 'Future tech', 'Startups'],
-        'Gaming': ['Game reviews', 'Tips & tricks', 'News', 'Streaming highlights', 'Esports'],
-        'Fashion': ['Outfit ideas', 'Trend alerts', 'Style tips', 'Designer news', 'Street style'],
-        'Food & Recipes': ['Quick recipes', 'Restaurant reviews', 'Cooking tips', 'Food trends', 'Healthy eating']
-    };
-    
-    return pillars[theme] || ['Educational content', 'Entertainment', 'Community engagement', 'Trending topics', 'User-generated content'];
-}
-
-function generateHashtags(theme) {
-    const baseTag = `#${theme.replace(/\s+/g, '').toLowerCase()}`;
-    const generalTags = ['#viral', '#trending', '#daily', '#instagood', '#follow', '#like', '#content', '#fyp', '#explore'];
-    return [baseTag, ...getRandomItems(generalTags, 3 + Math.floor(Math.random() * 2))];
-}
-
-function generatePostingTimes() {
-    const times = ['7:00 AM', '9:00 AM', '12:00 PM', '1:00 PM', '3:00 PM', '5:00 PM', '6:00 PM', '8:00 PM', '9:00 PM'];
-    return getRandomItems(times, 2 + Math.floor(Math.random() * 2));
-}
-
-// TOTP generation endpoint
-app.post('/api/generate-totp', (req, res) => {
-    const { secret } = req.body;
-    
-    if (!secret) {
-        return res.status(400).json({ error: 'Secret key required' });
-    }
-    
-    const time = Math.floor(Date.now() / 1000 / 30);
-    const hash = crypto.createHmac('sha1', Buffer.from(secret, 'base32'))
-        .update(Buffer.from(time.toString(16).padStart(16, '0'), 'hex'))
-        .digest();
-    
-    const offset = hash[hash.length - 1] & 0xf;
-    const binary = ((hash[offset] & 0x7f) << 24) |
-        ((hash[offset + 1] & 0xff) << 16) |
-        ((hash[offset + 2] & 0xff) << 8) |
-        (hash[offset + 3] & 0xff);
-    
-    const otp = (binary % 1000000).toString().padStart(6, '0');
-    const timeRemaining = 30 - (Math.floor(Date.now() / 1000) % 30);
-    
-    res.json({ otp, timeRemaining });
-});
-
-// Encryption endpoints
-app.post('/api/encrypt', async (req, res) => {
-    const { data, password } = req.body;
-    
     try {
-        const salt = crypto.randomBytes(32);
-        const iterations = 100000;
-        const key = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
+        const gender = Math.random() > 0.5 ? 'male' : 'female';
+        const firstName = dataPool.firstNames[gender][Math.floor(Math.random() * dataPool.firstNames[gender].length)];
+        const lastName = dataPool.lastNames[Math.floor(Math.random() * dataPool.lastNames.length)];
         
-        const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+        const currentYear = new Date().getFullYear();
+        const birthYear = currentYear - Math.floor(Math.random() * 47 + 18);
+        const birthMonth = Math.floor(Math.random() * 12 + 1);
+        const birthDay = Math.floor(Math.random() * 28 + 1);
+        const birthday = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
         
-        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'base64');
-        encrypted += cipher.final('base64');
+        const streetNumber = Math.floor(Math.random() * 200 + 1);
+        const suburb = dataPool.waSuburbs[Math.floor(Math.random() * dataPool.waSuburbs.length)];
         
-        const authTag = cipher.getAuthTag();
+        const availableStreets = await getStreetsForSuburb(suburb.name);
+        const streetName = availableStreets[Math.floor(Math.random() * availableStreets.length)];
         
-        const result = {
-            encrypted,
-            salt: salt.toString('base64'),
-            iv: iv.toString('base64'),
-            authTag: authTag.toString('base64'),
-            iterations
+        const address = {
+            street: `${streetNumber} ${streetName}`,
+            suburb: suburb.name,
+            state: 'WA',
+            postcode: suburb.postcode,
+            country: 'Australia',
+            full: `${streetNumber} ${streetName}, ${suburb.name}, WA ${suburb.postcode}, Australia`
         };
         
-        res.json(result);
+        const favoriteColor = dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)];
+        const interests = getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3));
+        const linguisticFeatures = getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2));
+        const occupation = dataPool.occupations[Math.floor(Math.random() * dataPool.occupations.length)];
+        const degree = dataPool.educationDegrees[Math.floor(Math.random() * dataPool.educationDegrees.length)];
+        const field = dataPool.educationFields[Math.floor(Math.random() * dataPool.educationFields.length)];
+        const education = `${degree} in ${field}`;
+        
+        res.json({
+            firstName,
+            lastName,
+            fullName: `${firstName} ${lastName}`,
+            gender,
+            birthday,
+            age: calculateAge(birthday),
+            address,
+            favoriteColor,
+            interests,
+            linguisticFeatures,
+            occupation,
+            education
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Encryption failed' });
+        console.error("Error in /api/generate-alias:", error);
+        res.status(500).json({ error: "Failed to generate alias data." });
     }
 });
 
-app.post('/api/decrypt', async (req, res) => {
-    const { encryptedData, password } = req.body;
-    
-    try {
-        const { encrypted, salt, iv, authTag, iterations } = encryptedData;
-        
-        const key = crypto.pbkdf2Sync(
-            password,
-            Buffer.from(salt, 'base64'),
-            iterations,
-            32,
-            'sha256'
-        );
-        
-        const decipher = crypto.createDecipheriv(
-            'aes-256-gcm',
-            key,
-            Buffer.from(iv, 'base64')
-        );
-        
-        decipher.setAuthTag(Buffer.from(authTag, 'base64'));
-        
-        let decrypted = decipher.update(encrypted, 'base64', 'utf8');
-        decrypted += decipher.final('utf8');
-        
-        res.json({ data: JSON.parse(decrypted) });
-    } catch (error) {
-        res.status(400).json({ error: 'Decryption failed - incorrect password or corrupted data' });
-    }
-});
-
-// Proxy for thispersondoesnotexist.com
 app.get('/api/generate-face', (req, res) => {
     const timestamp = Date.now();
     const options = {
@@ -445,20 +280,20 @@ app.get('/api/generate-face', (req, res) => {
         }
     };
 
-    https.get(options, (imgRes) => {
-        res.set('Content-Type', imgRes.headers['content-type'] || 'image/jpeg');
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        
-        imgRes.pipe(res);
+    const proxyReq = https.get(options, (imgRes) => {
+        res.writeHead(imgRes.statusCode, imgRes.headers);
+        imgRes.pipe(res, { end: true });
     }).on('error', (error) => {
         console.error('Error fetching image:', error);
         res.status(500).json({ error: 'Failed to generate face' });
     });
+
+    req.pipe(proxyReq, { end: true });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Ward server running on http://localhost:${PORT}`);
+    await cacheAllStreetData();
 });
 
 module.exports = app;

@@ -71,36 +71,35 @@ const dataPool = {
   ]
 };
 
-// --- ENCRYPTION/DECRYPTION FUNCTIONS (from SAMS) ---
+// --- ENCRYPTION/DECRYPTION FUNCTIONS ---
 
-async function generateKey(password, salt) {
-  const encoder = new TextEncoder();
-  const passwordBuffer = encoder.encode(password);
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    passwordBuffer,
-    'PBKDF2',
-    false,
-    ['deriveBits', 'deriveKey']
-  );
-  return await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 600000,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
+async function generateKeyFromPassword(password, salt) {
+    const result = await argon2.hash({
+        pass: password,
+        salt: salt,
+        time: 3, 
+        mem: 131072, 
+        hashLen: 32,
+        parallelism: 1,
+        type: argon2.ArgonType.Argon2id 
+    });
+
+    return result.hash;
 }
 
 async function encryptData(data, password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await generateKey(password, salt);
+  
+  const keyHash = await generateKeyFromPassword(password, salt);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyHash,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(JSON.stringify(data));
   const encryptedBuffer = await crypto.subtle.encrypt(
@@ -108,6 +107,7 @@ async function encryptData(data, password) {
     key,
     dataBuffer
   );
+
   const finalBuffer = new Uint8Array(salt.length + iv.length + encryptedBuffer.byteLength);
   finalBuffer.set(salt, 0);
   finalBuffer.set(iv, salt.length);
@@ -115,18 +115,30 @@ async function encryptData(data, password) {
   return finalBuffer;
 }
 
+
 async function decryptData(encryptedBlob, password) {
   try {
     const encryptedData = new Uint8Array(encryptedBlob);
+    
     const salt = encryptedData.slice(0, 16);
     const iv = encryptedData.slice(16, 28);
     const data = encryptedData.slice(28);
-    const key = await generateKey(password, salt);
+
+    const keyHash = await generateKeyFromPassword(password, salt);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyHash,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
     const decryptedBuffer = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       key,
       data
     );
+
     const decoder = new TextDecoder();
     const jsonString = decoder.decode(decryptedBuffer);
     return JSON.parse(jsonString);
@@ -222,8 +234,8 @@ async function generateEntityData(type) {
     previewContent.innerHTML = `
         <div class="flex flex-col items-center justify-center py-12">
             <div class="loading-spinner mb-4"></div>
-            <p class="text-sm text-white/50 uppercase tracking-wider">Generating ${type === 'person' ? 'Identity' : 'Page'}...</p>
-            <p class="text-xs text-white/30 mt-2">This shouldn't take long</p>
+            <p class="text-sm text-white/50 uppercase tracking-wider">Generating ${type === 'person' ? 'Identity' : 'Page'}</p>
+            <p class="text-xs text-white/30 mt-2">This shouldn't take long...</p>
         </div>
     `;
     previewContent.classList.remove('hidden');
@@ -353,13 +365,10 @@ function generatePageName(theme) {
 
   const style = Math.random();
   if (style < 0.33) {
-    // "<Prefix> <Theme>"
     return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${t}`;
   } else if (style < 0.66) {
-    // "<Theme> <Suffix>"
     return `${t} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
   } else {
-    // "<Theme> <Connector> the <Suffix>" or hyphen mix
     const c = connectors[Math.floor(Math.random() * connectors.length)];
     const s = suffixes[Math.floor(Math.random() * suffixes.length)];
     const pattern = Math.random() < 0.5

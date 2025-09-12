@@ -223,7 +223,7 @@ async function generateEntityData(type) {
         <div class="flex flex-col items-center justify-center py-12">
             <div class="loading-spinner mb-4"></div>
             <p class="text-sm text-white/50 uppercase tracking-wider">Generating ${type === 'person' ? 'Identity' : 'Page'}...</p>
-            <p class="text-xs text-white/30 mt-2">This may take a moment on first load</p>
+            <p class="text-xs text-white/30 mt-2">This shouldn't take long...</p>
         </div>
     `;
     previewContent.classList.remove('hidden');

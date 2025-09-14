@@ -71,6 +71,507 @@ const dataPool = {
   ]
 };
 
+const careerProfiles = {
+  tech: {
+    occupations: ['Software Developer', 'Data Scientist', 'DevOps Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Mobile Developer', 'Machine Learning Engineer', 'Systems Architect', 'Tech Lead', 'Product Manager', 'UX Designer', 'UI Developer', 'QA Engineer', 'Site Reliability Engineer'],
+    education: [
+      'Bachelor of Science in Computer Science',
+      'Bachelor of Science in Software Engineering', 
+      'Bachelor of Science in Information Technology',
+      'Master of Science in Computer Science',
+      'Bachelor of Science in Data Science',
+      'Master of Science in Artificial Intelligence',
+      'Bachelor of Engineering in Software Engineering',
+      'Bootcamp Certificate in Web Development',
+      'Bachelor of Science in Mathematics',
+      'Master of Science in Machine Learning'
+    ],
+    interests: ['Coding', 'Open Source', 'Hackathons', 'Gaming', 'Technology', 'AI & Machine Learning', '3D Printing', 'Raspberry Pi', 'Automation', 'Cryptocurrency', 'Web3', 'Cloud Computing', 'Cybersecurity', 'Tech Podcasts', 'Building PCs'],
+    ageRange: { min: 22, max: 45 }
+  },
+  
+  creative: {
+    occupations: ['Graphic Designer', 'UX Designer', 'Photographer', 'Videographer', 'Content Creator', 'Art Director', 'Brand Designer', 'Motion Designer', 'Illustrator', 'Creative Director', 'Video Editor', 'Social Media Manager', 'Copywriter'],
+    education: [
+      'Bachelor of Fine Arts in Graphic Design',
+      'Bachelor of Arts in Visual Communication',
+      'Bachelor of Arts in Digital Media',
+      'Diploma in Photography',
+      'Bachelor of Arts in Film & Media',
+      'Master of Fine Arts in Design',
+      'Certificate in Digital Marketing',
+      'Bachelor of Arts in Advertising',
+      'Bachelor of Design in Communication Design'
+    ],
+    interests: ['Photography', 'Art', 'Design', 'Typography', 'Drawing', 'Digital Art', 'Film Making', 'Color Theory', 'Branding', 'Social Media', 'Vintage Cameras', 'Gallery Visits', 'Sketching', 'Adobe Creative Suite'],
+    ageRange: { min: 21, max: 50 }
+  },
+  
+  business: {
+    occupations: ['Marketing Manager', 'Sales Manager', 'Business Analyst', 'Product Manager', 'Account Manager', 'Consultant', 'Project Manager', 'Operations Manager', 'Financial Analyst', 'HR Manager', 'Business Development Manager', 'Strategy Consultant'],
+    education: [
+      'Bachelor of Business Administration',
+      'Bachelor of Commerce',
+      'Master of Business Administration (MBA)',
+      'Bachelor of Science in Marketing',
+      'Bachelor of Science in Finance',
+      'Bachelor of Science in Economics',
+      'Master of Commerce',
+      'Bachelor of Science in Business Management',
+      'Graduate Diploma in Business'
+    ],
+    interests: ['Networking', 'Entrepreneurship', 'Investing', 'Leadership', 'Public Speaking', 'Strategy Games', 'Economics', 'Startups', 'Business Podcasts', 'Golf', 'Wine Tasting', 'Reading Business Books', 'LinkedIn', 'Stock Market'],
+    ageRange: { min: 24, max: 55 }
+  },
+  
+  healthcare: {
+    occupations: ['Nurse', 'Doctor', 'Pharmacist', 'Physiotherapist', 'Dentist', 'Medical Researcher', 'Healthcare Administrator', 'Radiographer', 'Paramedic', 'Mental Health Counselor', 'Nutritionist', 'Occupational Therapist'],
+    education: [
+      'Bachelor of Nursing',
+      'Doctor of Medicine',
+      'Bachelor of Pharmacy',
+      'Bachelor of Science in Nursing',
+      'Master of Public Health',
+      'Bachelor of Science in Biology',
+      'Bachelor of Health Science',
+      'Bachelor of Physiotherapy',
+      'Master of Clinical Psychology',
+      'Bachelor of Nutrition Science'
+    ],
+    interests: ['Health & Wellness', 'Fitness', 'Nutrition', 'Medical Research', 'Running', 'Yoga', 'Meditation', 'Volunteering', 'Science', 'Mental Health Advocacy', 'Cooking Healthy Meals', 'Marathon Training', 'Medical Journals'],
+    ageRange: { min: 23, max: 60 }
+  },
+  
+  education: {
+    occupations: ['Teacher', 'Professor', 'Education Coordinator', 'Curriculum Developer', 'School Counselor', 'Principal', 'Tutor', 'Special Education Teacher', 'Academic Advisor', 'Librarian', 'Education Consultant'],
+    education: [
+      'Bachelor of Education',
+      'Bachelor of Arts in Education',
+      'Master of Education',
+      'Bachelor of Science with Teaching Certificate',
+      'Master of Teaching',
+      'Bachelor of Early Childhood Education',
+      'Postgraduate Certificate in Education',
+      'PhD in Education',
+      'Bachelor of Special Education'
+    ],
+    interests: ['Reading', 'Writing', 'Mentoring', 'Child Development', 'Educational Technology', 'Curriculum Design', 'Lifelong Learning', 'Book Clubs', 'Museums', 'Educational Podcasts', 'Volunteering with Youth', 'Board Games', 'Storytelling'],
+    ageRange: { min: 22, max: 65 }
+  },
+  
+  trades: {
+    occupations: ['Electrician', 'Plumber', 'Carpenter', 'Mechanic', 'HVAC Technician', 'Welder', 'Construction Manager', 'Landscaper', 'Auto Technician', 'Cabinet Maker', 'Tiler', 'Painter'],
+    education: [
+      'Trade Certificate in Electrical',
+      'Certificate III in Plumbing',
+      'Certificate III in Carpentry',
+      'Diploma in Building and Construction',
+      'Certificate IV in Automotive Technology',
+      'Trade Certificate in Welding',
+      'Certificate III in Engineering',
+      'Apprenticeship Completion Certificate',
+      'TAFE Diploma in Construction'
+    ],
+    interests: ['DIY Projects', 'Home Improvement', 'Cars', 'Motorcycles', 'Woodworking', 'Tools', 'Camping', 'Fishing', '4WD Adventures', 'BBQ', 'Sports', 'Building Things', 'Restoration Projects', 'Power Tools'],
+    ageRange: { min: 20, max: 55 }
+  },
+  
+  hospitality: {
+    occupations: ['Chef', 'Restaurant Manager', 'Barista', 'Bartender', 'Hotel Manager', 'Event Coordinator', 'Sommelier', 'Pastry Chef', 'Catering Manager', 'Food Critic', 'Hospitality Consultant'],
+    education: [
+      'Certificate III in Commercial Cookery',
+      'Diploma in Hospitality Management',
+      'Bachelor of Culinary Arts',
+      'Certificate IV in Hospitality',
+      'Bachelor of Hotel Management',
+      'Wine & Spirits Education Trust Certificate',
+      'Diploma in Event Management',
+      'Certificate in Barista Skills',
+      'Bachelor of Tourism Management'
+    ],
+    interests: ['Cooking', 'Food & Wine', 'Travel', 'Coffee', 'Restaurant Reviews', 'Food Photography', 'Wine Tasting', 'Craft Beer', 'Farmers Markets', 'Recipe Development', 'Food Blogging', 'Cultural Cuisine', 'Baking'],
+    ageRange: { min: 19, max: 50 }
+  },
+  
+  science: {
+    occupations: ['Research Scientist', 'Lab Technician', 'Environmental Scientist', 'Chemist', 'Biologist', 'Data Analyst', 'Science Teacher', 'Marine Biologist', 'Geologist', 'Physicist', 'Research Assistant'],
+    education: [
+      'Bachelor of Science in Biology',
+      'Bachelor of Science in Chemistry',
+      'Master of Science in Environmental Science',
+      'PhD in Physics',
+      'Bachelor of Science in Marine Biology',
+      'Bachelor of Science in Geology',
+      'Master of Science in Biotechnology',
+      'Bachelor of Science in Mathematics',
+      'PhD in Molecular Biology'
+    ],
+    interests: ['Science', 'Research', 'Nature', 'Documentary Films', 'Astronomy', 'Environmental Conservation', 'Science Podcasts', 'Museums', 'Birdwatching', 'Hiking', 'Scientific Journals', 'Lab Work', 'Data Analysis'],
+    ageRange: { min: 22, max: 60 }
+  },
+  
+  arts: {
+    occupations: ['Artist', 'Musician', 'Writer', 'Actor', 'Dancer', 'Art Teacher', 'Gallery Curator', 'Music Producer', 'Novelist', 'Poet', 'Theatre Director', 'Art Therapist'],
+    education: [
+      'Bachelor of Fine Arts',
+      'Bachelor of Music',
+      'Bachelor of Arts in Creative Writing',
+      'Master of Fine Arts',
+      'Diploma in Performing Arts',
+      'Bachelor of Arts in Theatre',
+      'Bachelor of Arts in Dance',
+      'Certificate in Music Production',
+      'Bachelor of Arts in Art History'
+    ],
+    interests: ['Art', 'Music', 'Writing', 'Theatre', 'Poetry', 'Gallery Visits', 'Live Music', 'Creative Writing', 'Painting', 'Sculpture', 'Dance', 'Film', 'Literature', 'Art History', 'Street Art'],
+    ageRange: { min: 20, max: 60 }
+  },
+  
+  student: {
+    occupations: ['University Student', 'Graduate Student', 'Part-time Barista', 'Intern', 'Research Assistant', 'Tutor', 'Campus Ambassador', 'Part-time Retail', 'Freelance Writer'],
+    education: [
+      'Currently pursuing Bachelor Degree',
+      'Currently pursuing Master Degree',
+      'High School Graduate',
+      'Gap Year Student',
+      'Exchange Student',
+      'Currently pursuing PhD',
+      'Part-time Student',
+      'Online Degree Student'
+    ],
+    interests: ['Gaming', 'Social Media', 'Music Festivals', 'Student Politics', 'Part-time Work', 'Study Groups', 'Campus Events', 'Internships', 'Travel', 'Netflix', 'Coffee Shops', 'House Parties', 'Sports'],
+    ageRange: { min: 18, max: 28 }
+  }
+};
+
+const linguisticProfilesByType = {
+  professional: [
+    'Formal writing style',
+    'Grammatically perfect',
+    'Uses professional terminology',
+    'Clear and concise',
+    'Structured arguments',
+    'Minimal emoji usage',
+    'Proper capitalization'
+  ],
+  casual: [
+    'Casual and friendly',
+    'Uses slang frequently',
+    'Lots of emojis 😊',
+    'Conversational tone',
+    'Makes occasional typos',
+    'Uses abbreviations',
+    'Emoji at line-end'
+  ],
+  creative: [
+    'Uses metaphors often',
+    'Expressive language',
+    'Unconventional punctuation',
+    'Stream of consciousness',
+    'Poetic expressions',
+    'Visual descriptions',
+    'Unique word choices'
+  ],
+  technical: [
+    'Technical jargon',
+    'Precise terminology',
+    'Bullet-point thinker •',
+    'Code snippets included',
+    'Links to documentation',
+    'Version numbers mentioned',
+    'Systematic explanations'
+  ],
+  gen_z: [
+    'no caps aesthetic',
+    'Heavy emoji usage 💀',
+    'Internet slang (fr, ngl, iykyk)',
+    'TikTok references',
+    'Meme language',
+    'Short sentences',
+    'Hashtag usage #sparingly'
+  ]
+};
+
+const contentPageThemes = {
+  memes: {
+    themes: ['Memes', 'Dank Memes', 'Wholesome Memes', 'Tech Memes', 'Student Memes'],
+    postingStyles: ['Multiple daily posts', 'Peak hours only', 'Viral content focus', 'OC and reposts mix'],
+    audiences: ['Gen Z', 'Millennials', 'Students', 'Tech workers'],
+    voiceTones: ['Humorous & witty', 'Edgy & bold', 'Relatable & casual', 'Sarcastic & clever'],
+    contentPillars: ['Trending formats', 'Original content', 'Relatable humor', 'Pop culture', 'Current events'],
+    hashtags: ['#memes', '#dankmemes', '#funny', '#viral', '#relatable', '#mood']
+  },
+  
+  tech: {
+    themes: ['Tech News', 'AI & ML', 'Web Development', 'Cybersecurity', 'Startup News'],
+    postingStyles: ['Daily news roundup', 'In-depth weekly analysis', 'Breaking news focus', 'Tutorial Tuesdays'],
+    audiences: ['Developers', 'Tech enthusiasts', 'Startup founders', 'IT professionals'],
+    voiceTones: ['Professional & informative', 'Analytical & data-driven', 'Educational & helpful', 'Forward-thinking'],
+    contentPillars: ['Product launches', 'Industry analysis', 'Tutorials', 'Tech trends', 'Developer tools'],
+    hashtags: ['#tech', '#coding', '#ai', '#startup', '#innovation', '#developer']
+  },
+  
+  lifestyle: {
+    themes: ['Fashion', 'Home Design', 'Minimalism', 'Sustainable Living', 'Wellness'],
+    postingStyles: ['Aesthetic grids', 'Daily inspiration', 'Weekly themes', 'Story-heavy'],
+    audiences: ['Millennials', 'Gen Z', 'Creative professionals', 'Everyone'],
+    voiceTones: ['Inspirational & motivating', 'Friendly & approachable', 'Aspirational', 'Authentic'],
+    contentPillars: ['Style tips', 'Product reviews', 'DIY guides', 'Inspiration boards', 'Lifestyle hacks'],
+    hashtags: ['#lifestyle', '#aesthetic', '#minimalism', '#wellness', '#inspiration', '#dailylife']
+  },
+  
+  food: {
+    themes: ['Food & Recipes', 'Restaurant Reviews', 'Healthy Eating', 'Baking', 'World Cuisine'],
+    postingStyles: ['Recipe of the day', 'Weekend specials', 'Video recipes', 'Photo-focused'],
+    audiences: ['Foodies', 'Home cooks', 'Parents', 'Everyone'],
+    voiceTones: ['Warm & inviting', 'Enthusiastic', 'Educational', 'Passionate'],
+    contentPillars: ['Recipes', 'Restaurant reviews', 'Cooking tips', 'Food trends', 'Meal prep'],
+    hashtags: ['#foodie', '#recipe', '#cooking', '#foodstagram', '#homecooking', '#yummy']
+  },
+  
+  fitness: {
+    themes: ['Fitness Tips', 'Workout Routines', 'Nutrition', 'Yoga', 'Running'],
+    postingStyles: ['Daily workouts', 'Weekly challenges', 'Form check Fridays', 'Motivation Monday'],
+    audiences: ['Fitness enthusiasts', 'Beginners', 'Athletes', 'Health-conscious'],
+    voiceTones: ['Motivational & energetic', 'Supportive & encouraging', 'Educational', 'No-nonsense'],
+    contentPillars: ['Workout routines', 'Form guides', 'Nutrition tips', 'Progress tracking', 'Recovery'],
+    hashtags: ['#fitness', '#workout', '#gym', '#fitfam', '#health', '#motivation']
+  },
+  
+  gaming: {
+    themes: ['Gaming', 'Esports', 'Game Reviews', 'Gaming News', 'Retro Gaming'],
+    postingStyles: ['Stream highlights', 'Daily news', 'Review embargo lifts', 'Clip compilations'],
+    audiences: ['Gamers', 'Gen Z', 'Millennials', 'Esports fans'],
+    voiceTones: ['Enthusiastic & hype', 'Analytical', 'Casual & fun', 'Competitive'],
+    contentPillars: ['Game reviews', 'News & updates', 'Tips & tricks', 'Clips & highlights', 'Esports coverage'],
+    hashtags: ['#gaming', '#gamer', '#videogames', '#esports', '#twitch', '#gameplay']
+  }
+};
+
+function getLinguisticProfile(occupation, age) {
+  const profile = [];
+  
+  if (occupation.includes('Manager') || occupation.includes('Director') || occupation.includes('Consultant')) {
+    profile.push(...getRandomItems(linguisticProfilesByType.professional, 2));
+  } else if (occupation.includes('Developer') || occupation.includes('Engineer') || occupation.includes('Scientist')) {
+    profile.push(...getRandomItems(linguisticProfilesByType.technical, 2));
+  } else if (occupation.includes('Designer') || occupation.includes('Artist') || occupation.includes('Writer')) {
+    profile.push(...getRandomItems(linguisticProfilesByType.creative, 2));
+  } else if (occupation.includes('Student') || age < 25) {
+    profile.push(...getRandomItems(linguisticProfilesByType.gen_z, 2));
+  } else {
+    profile.push(...getRandomItems(linguisticProfilesByType.casual, 2));
+  }
+  
+
+  const allQuirks = [
+    'Parenthetical asides (often)',
+    'Ellipses user…',
+    'Lots of exclamation marks!',
+    'Rhetorical questions?',
+    'ALL CAPS for emphasis',
+    'Uses British spelling',
+    'Uses American spelling'
+  ];
+  profile.push(getRandomItems(allQuirks, 1)[0]);
+  
+  return profile;
+}
+
+
+function generateCoherentPersonData() {
+  const profileTypes = Object.keys(careerProfiles);
+  const selectedProfile = careerProfiles[profileTypes[Math.floor(Math.random() * profileTypes.length)]];
+
+  const age = selectedProfile.ageRange.min + Math.floor(Math.random() * (selectedProfile.ageRange.max - selectedProfile.ageRange.min));
+  const birthYear = new Date().getFullYear() - age;
+  const birthMonth = Math.floor(Math.random() * 12 + 1);
+  const birthDay = Math.floor(Math.random() * 28 + 1);
+  const birthday = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
+
+  const gender = Math.random() > 0.5 ? 'male' : 'female';
+  const firstName = dataPool.firstNames[gender][Math.floor(Math.random() * dataPool.firstNames[gender].length)];
+  const lastName = dataPool.lastNames[Math.floor(Math.random() * dataPool.lastNames.length)];
+
+  const occupation = selectedProfile.occupations[Math.floor(Math.random() * selectedProfile.occupations.length)];
+  const education = selectedProfile.education[Math.floor(Math.random() * selectedProfile.education.length)];
+
+  const careerInterests = getRandomItems(selectedProfile.interests, 3);
+  const generalInterests = getRandomItems([
+    'Travel', 'Music', 'Movies', 'Netflix', 'Podcasts', 'Coffee',
+    'Dogs', 'Cats', 'Nature', 'Beach', 'Mountains', 'City Life'
+  ], 2);
+  const interests = [...careerInterests, ...generalInterests];
+
+  const linguisticFeatures = getLinguisticProfile(occupation, age);
+  
+  return {
+    firstName,
+    lastName,
+    fullName: `${firstName} ${lastName}`,
+    gender,
+    birthday,
+    age,
+    occupation,
+    education,
+    interests,
+    linguisticFeatures,
+    favoriteColor: dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)],
+    address: {
+      street: '123 Example Street',
+      suburb: 'Perth',
+      state: 'WA',
+      postcode: '6000',
+      country: 'Australia',
+      full: '123 Example Street, Perth, WA 6000, Australia'
+    }
+  };
+}
+
+
+function generateCoherentContentPageData() {
+  const themeCategories = Object.keys(contentPageThemes);
+  const selectedCategory = contentPageThemes[themeCategories[Math.floor(Math.random() * themeCategories.length)]];
+  
+  const theme = selectedCategory.themes[Math.floor(Math.random() * selectedCategory.themes.length)];
+  
+  const pageName = generateSmartPageName(theme);
+  const handle = generateHandle(pageName);
+
+  const postingStyle = selectedCategory.postingStyles[Math.floor(Math.random() * selectedCategory.postingStyles.length)];
+  const voiceTone = selectedCategory.voiceTones[Math.floor(Math.random() * selectedCategory.voiceTones.length)];
+  const targetAudience = getRandomItems(selectedCategory.audiences, 2);
+  
+  const description = generateSmartDescription(theme, voiceTone);
+
+  const contentPillars = selectedCategory.contentPillars;
+
+  const baseHashtags = selectedCategory.hashtags;
+  const trendingHashtags = getRandomItems(['#fyp', '#viral', '#trending', '#explore', '#foryou'], 2);
+  const hashtags = [...baseHashtags.slice(0, 4), ...trendingHashtags];
+
+  const postingTimes = generateSmartPostingTimes(targetAudience);
+  const postingFrequency = generateSmartPostingFrequency(postingStyle);
+  
+  return {
+    pageName,
+    handle,
+    theme,
+    description,
+    postingStyle,
+    targetAudience,
+    postingFrequency,
+    contentPillars,
+    voiceTone,
+    hashtags,
+    bestPostingTimes: postingTimes
+  };
+}
+
+function generateSmartPageName(theme) {
+  const themeWords = theme.split(/[&\s]+/).filter(w => w && w !== 'News');
+  const mainWord = themeWords[0] || 'Content';
+  
+  const patterns = [
+    () => `The ${mainWord} Hub`,
+    () => `Daily ${mainWord}`,
+    () => `${mainWord} Central`,
+    () => `${mainWord} Vibes`,
+    () => `All Things ${mainWord}`,
+    () => `${mainWord} Daily`,
+    () => `Epic ${mainWord}`,
+    () => `${mainWord} World`,
+    () => `Next Level ${mainWord}`,
+    () => `${mainWord} Nation`
+  ];
+  
+  return patterns[Math.floor(Math.random() * patterns.length)]();
+}
+
+function generateSmartDescription(theme, voiceTone) {
+  const templates = {
+    'Humorous & witty': [
+      `Your daily dose of ${theme.toLowerCase()} that'll make you snort-laugh 😂`,
+      `${theme} content so good, your mom will follow us`,
+      `We post ${theme.toLowerCase()}, you forget your problems. Win-win.`
+    ],
+    'Professional & informative': [
+      `Curated ${theme.toLowerCase()} content for professionals and enthusiasts`,
+      `Your trusted source for ${theme.toLowerCase()} insights and updates`,
+      `Quality ${theme.toLowerCase()} content, delivered daily`
+    ],
+    'Inspirational & motivating': [
+      `${theme} content to inspire your best life ✨`,
+      `Transform your day with our ${theme.toLowerCase()} posts`,
+      `Daily ${theme.toLowerCase()} motivation for dreamers and doers`
+    ],
+    'Casual & conversational': [
+      `Just vibing with ${theme.toLowerCase()} content 🌟`,
+      `Your friendly neighborhood ${theme.toLowerCase()} page`,
+      `${theme} stuff that actually matters, no cap`
+    ]
+  };
+  
+  const defaultTemplates = [
+    `Your go-to source for all things ${theme.toLowerCase()}`,
+    `Daily ${theme.toLowerCase()} content that hits different`,
+    `${theme} | Quality content | Join the community`
+  ];
+  
+  const selectedTemplates = templates[voiceTone] || defaultTemplates;
+  return selectedTemplates[Math.floor(Math.random() * selectedTemplates.length)];
+}
+
+function generateSmartPostingTimes(audiences) {
+  const audienceTimes = {
+    'Gen Z': ['7:00 AM', '12:00 PM', '3:30 PM', '8:00 PM', '10:00 PM'],
+    'Millennials': ['8:00 AM', '12:30 PM', '5:30 PM', '8:00 PM'],
+    'Parents': ['6:00 AM', '9:00 AM', '1:00 PM', '7:00 PM'],
+    'Students': ['7:30 AM', '12:00 PM', '4:00 PM', '9:00 PM', '11:00 PM'],
+    'Professionals': ['7:00 AM', '12:00 PM', '6:00 PM'],
+    'Everyone': ['9:00 AM', '12:00 PM', '5:00 PM', '8:00 PM']
+  };
+  
+  let times = [];
+  audiences.forEach(audience => {
+    if (audienceTimes[audience]) {
+      times.push(...audienceTimes[audience]);
+    }
+  });
+
+  times = [...new Set(times)];
+  return getRandomItems(times, Math.min(4, times.length));
+}
+
+function generateSmartPostingFrequency(style) {
+  const frequencies = {
+    'Multiple daily posts': '4-6 posts/day',
+    'Daily news roundup': '1-2 posts/day',
+    'Weekly themes': '5-7 posts/week',
+    'Story-heavy': 'Stories daily, posts 3x/week',
+    'Peak hours only': '2-3 posts/day at peak times',
+    'Video-heavy': '3-4 videos/week',
+    'Tutorial Tuesdays': 'Daily tips, weekly deep-dives',
+    'Weekend specials': 'Daily weekdays, special weekend content'
+  };
+  
+  return frequencies[style] || '3-5 posts/week';
+}
+
+
+function getRandomItems(array, count) {
+  const shuffled = [...array].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+const improvedGeneration = {
+  generateCoherentPersonData,
+  generateCoherentContentPageData,
+  getLinguisticProfile,
+  careerProfiles,
+  contentPageThemes
+};
+
 // --- ENCRYPTION/DECRYPTION FUNCTIONS ---
 
 async function generateKeyFromPassword(password, salt) {
@@ -278,15 +779,17 @@ async function generatePersonData() {
         }
 
         const apiData = await response.json();
+        
+        const coherentData = generateCoherentPersonData();
 
         return {
             ...apiData,
             age: calculateAge(apiData.birthday),
-            favoriteColor: dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)],
-            interests: getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3)),
-            linguisticFeatures: getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2)),
-            occupation: generateOccupation(),
-            education: generateEducation()
+            occupation: coherentData.occupation,
+            education: coherentData.education,
+            interests: coherentData.interests,
+            linguisticFeatures: getLinguisticProfile(coherentData.occupation, calculateAge(apiData.birthday)),
+            favoriteColor: coherentData.favoriteColor
         };
     } catch (error) {
         console.log('API failed, using local generation:', error.message);
@@ -294,57 +797,69 @@ async function generatePersonData() {
     }
 }
 
+
 function generateLocalPersonData() {
-    const gender = Math.random() > 0.5 ? 'male' : 'female';
-    const firstName = dataPool.firstNames[gender][Math.floor(Math.random() * dataPool.firstNames[gender].length)];
-    const lastName = dataPool.lastNames[Math.floor(Math.random() * dataPool.lastNames.length)];
-
-    const birthYear = new Date().getFullYear() - Math.floor(Math.random() * 47 + 18);
-    const birthMonth = Math.floor(Math.random() * 12 + 1);
-    const birthDay = Math.floor(Math.random() * 28 + 1);
-    const birthday = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
-
-    return {
-        firstName,
-        lastName,
-        fullName: `${firstName} ${lastName}`,
-        gender,
-        birthday,
-        age: calculateAge(birthday),
-        favoriteColor: dataPool.colors[Math.floor(Math.random() * dataPool.colors.length)],
-        interests: getRandomItems(dataPool.interests, 3 + Math.floor(Math.random() * 3)),
-        linguisticFeatures: getRandomItems(dataPool.linguisticFeatures, 2 + Math.floor(Math.random() * 2)),
-        occupation: generateOccupation(),
-        education: generateEducation(),
-        address: {
-            street: '123 Example Street',
-            suburb: 'Perth',
-            state: 'WA',
-            postcode: '6000',
-            country: 'Australia',
-            full: '123 Example Street, Perth, WA 6000, Australia'
-        }
-    };
+    return generateCoherentPersonData();
 }
 
 function generateContentPageData() {
-    const themes = getRandomItems(dataPool.contentThemes, 1)[0];
-    const pageName = generatePageName(themes);
-    const handle = generateHandle(pageName);
+    return generateCoherentContentPageData();
+}
 
-    return {
-        pageName,
-        handle,
-        theme: themes,
-        description: generatePageDescription(themes),
-        postingStyle: getRandomItems(dataPool.postingStyles, 1)[0],
-        targetAudience: getRandomItems(dataPool.targetAudiences, 1 + Math.floor(Math.random() * 2)),
-        postingFrequency: generatePostingFrequency(),
-        contentPillars: generateContentPillars(themes),
-        voiceTone: generateVoiceTone(),
-        hashtags: generateHashtags(themes),
-        bestPostingTimes: generatePostingTimes()
-    };
+function generateOccupation() {
+   
+    const profileTypes = Object.keys(careerProfiles);
+    const randomProfile = careerProfiles[profileTypes[Math.floor(Math.random() * profileTypes.length)]];
+    return randomProfile.occupations[Math.floor(Math.random() * randomProfile.occupations.length)];
+}
+
+function generateEducation() {
+    const profileTypes = Object.keys(careerProfiles);
+    const randomProfile = careerProfiles[profileTypes[Math.floor(Math.random() * profileTypes.length)]];
+    return randomProfile.education[Math.floor(Math.random() * randomProfile.education.length)];
+}
+
+
+function generateUsernames(firstName, lastName, birthday) {
+    const usernames = [];
+    const year = birthday.split('-')[0].slice(-2);
+    const birthYear = birthday.split('-')[0];
+    const birthMonth = birthday.split('-')[1];
+    
+
+    const fInitial = firstName[0].toLowerCase();
+    const lInitial = lastName[0].toLowerCase();
+    
+    usernames.push(`${firstName.toLowerCase()}.${lastName.toLowerCase()}`);
+    usernames.push(`${firstName.toLowerCase()}_${lastName.toLowerCase()}`);
+    usernames.push(`${firstName.toLowerCase()}${lastName.toLowerCase()}${year}`);
+    usernames.push(`${fInitial}${lastName.toLowerCase()}`);
+    usernames.push(`${firstName.toLowerCase()}${lInitial}${birthYear}`);
+    usernames.push(`${fInitial}.${lastName.toLowerCase()}${year}`);
+    usernames.push(`${firstName.toLowerCase()}.${lInitial}`);
+    usernames.push('custom');
+    
+    return [...new Set(usernames)].slice(0, 6);
+}
+
+
+function generateHandle(pageName) {
+    const base = (pageName || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '')
+        .slice(0, 15) || 'page';
+    
+    const suffixes = [
+        () => Math.floor(100 + Math.random() * 899).toString(),
+        () => '_' + Math.floor(10 + Math.random() * 89).toString(),
+        () => '.' + ['official', 'page', 'daily', 'hub', 'hq'][Math.floor(Math.random() * 5)],
+        () => '_' + ['official', 'real', 'main', 'au'][Math.floor(Math.random() * 4)],
+        () => Math.random().toString(36).slice(2, 5)
+    ];
+    
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)]();
+    return `@${base}${suffix}`;
 }
 
 function generatePageName(theme) {
@@ -379,24 +894,22 @@ function generatePageName(theme) {
 }
 
 function generateHandle(pageName) {
-  const base = (pageName || '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') 
-    .replace(/[^a-z0-9]+/g, '')                       
-    .slice(0, 18) || 'page';
-
-  const suffixTypes = [
-    () => Math.floor(100 + Math.random() * 899).toString(),
-    () => '_' + Math.floor(10 + Math.random() * 89).toString(),
-    () => '.' + Math.floor(1000 + Math.random() * 8999).toString(),
-    () => '_io',
-    () => '_au',
-    () => 'tv',
-    () => Math.random().toString(36).slice(2, 5) 
-  ];
-
-  const suffix = suffixTypes[Math.floor(Math.random() * suffixTypes.length)]();
-  return `@${base}${suffix}`;
+    const base = (pageName || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '')
+        .slice(0, 15) || 'page';
+    
+    const suffixes = [
+        () => Math.floor(100 + Math.random() * 899).toString(),
+        () => '_' + Math.floor(10 + Math.random() * 89).toString(),
+        () => '.' + ['official', 'page', 'daily', 'hub', 'hq'][Math.floor(Math.random() * 5)],
+        () => '_' + ['official', 'real', 'main', 'au'][Math.floor(Math.random() * 4)],
+        () => Math.random().toString(36).slice(2, 5)
+    ];
+    
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)]();
+    return `@${base}${suffix}`;
 }
 
 function generatePageDescription(theme) {
